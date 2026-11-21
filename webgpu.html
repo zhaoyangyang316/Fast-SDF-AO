@@ -35,8 +35,12 @@ canvas{display:block;width:100%;height:auto}
     <button data-scene="gallery" aria-pressed="true">Gallery (Multi-Bounce GI)</button>
     <button data-scene="atrium" aria-pressed="false">Atrium (Curved)</button>
     <button data-scene="archive" aria-pressed="false">Archive (Boxes)</button>
+    <select id="import-role" aria-label="Model import mode">
+      <option value="static">Import as static scene</option>
+      <option value="rigid">Import as moving mesh</option>
+    </select>
     <button id="load-btn" style="border-color:#38bdf8;color:#bae6fd">Load .glb / .obj</button>
-    <input id="file-in" type="file" accept=".glb,.gltf,.obj" style="display:none">
+    <input id="file-in" type="file" multiple accept=".glb,.gltf,.obj,.bin,.png,.jpg,.jpeg,.webp" style="display:none">
     <select id="quality" aria-label="Quality">
       <option value="very_low">Quality: Very Low (Mobile)</option>
       <option value="low">Quality: Low (Performance)</option>
@@ -56,13 +60,14 @@ canvas{display:block;width:100%;height:auto}
     <label><input id="hash" type="checkbox" checked> SHaRC Hash</label>
     <label><input id="reuse" type="checkbox" checked> 2×2 Reuse</label>
     <label><input id="emissive" type="checkbox"> Emissive Orb</label>
+    <label><input id="rigid-mover" type="checkbox"> Rigid mesh</label>
     <label><input id="movers" type="checkbox"> Moving Box</label>
     <label>Sun <input id="sun" type="range" min="-65" max="65" value="22" step="1" style="width:90px"><span id="sun-val" style="min-width:32px">22°</span></label>
     <button id="clear">Clear Cache</button>
   </nav>
   <div id="view">
     <canvas id="c" width="1280" height="720"></canvas>
-    <div id="drop-hint">Drop .glb or .obj to bake exact SDF on GPU</div>
+    <div id="drop-hint">Drop a .glb, .gltf, or .obj model</div>
     <output id="hud"><strong id="fps">— FPS</strong><small id="gpu-ms">GPU: — ms · Cache skip: —%</small></output>
   </div>
   <output id="status">Initializing WebGPU Compute…</output>
@@ -158,9 +163,17 @@ try {
     archive: [12, 6.5, 0],
     custom: [0, -2.65, 0],
   };
-  const boxTestScene = new URLSearchParams(location.search).get('scene') === 'moving-box';
+  const preset = new URLSearchParams(location.search).get('scene');
+  const boxTestScene = preset === 'moving-box';
+  const rigidTestScene = preset === 'rigid-mesh';
+  const rigidInput = document.querySelector('#rigid-mover');
+  const importRole = document.querySelector('#import-role');
+  if (rigidTestScene) importRole.value = 'rigid';
   const moversInput = document.querySelector('#movers');
   let activeScene = 'gallery';
+  let selection = 0, customSdf = null;
+  let rigidData = null, rigidAsset = null, rigidInstance = null;
+  const rigidMatrix = new T.Matrix4();
   let emissiveOn = false;
   let moversOn = false;
   let sunDeg = 22;
@@ -180,6 +193,88 @@ try {
     moversOn = enabled;
     moversInput.checked = enabled;
     updateMovers(t);
+  }
+
+  function chairMeshData() {
+    const chair = new T.Group();
+    const frame = new T.MeshStandardMaterial({ color: 0x9d6746, roughness: 0.65 });
+    const upholstery = new T.MeshStandardMaterial({ color: 0xc75137, roughness: 0.85 });
+    function part(size, center, material) {
+      const mesh = new T.Mesh(new T.BoxGeometry(...size), material);
+      mesh.position.set(...center);
+      chair.add(mesh);
+    }
+    for (const x of [-0.26, 0.26]) {
+      for (const z of [-0.22, 0.22]) part([0.08, 0.52, 0.08], [x, 0.26, z], frame);
+      part([0.08, 0.54, 0.08], [x, 0.78, -0.22], frame);
+    }
+    part([0.66, 0.11, 0.58], [0, 0.55, 0], upholstery);
+    part([0.63, 0.23, 0.08], [0, 0.98, -0.22], upholstery);
+    return importMeshData(chair, 'Chair', 1.1, true).data;
+  }
+
+  function rigidPose(t) {
+    const [x, y, floor] = boxPathCenters[activeScene] ?? boxPathCenters.archive;
+    rigidMatrix.makeRotationZ(0.42 + 0.8 * t);
+    if (activeScene === 'gallery') {
+      rigidMatrix.setPosition(x + 1.35 * Math.sin(0.7 * t), -2.44, 0);
+    } else {
+      rigidMatrix.setPosition(x + 1.35 * Math.sin(0.7 * t), y, floor);
+    }
+    return rigidMatrix.elements;
+  }
+
+  function setRigidMover(enabled, t = 0) {
+    if (enabled) {
+      rigidData ??= chairMeshData();
+      rigidAsset ??= gpu.rigidMeshes.registerAsset(rigidData);
+      const matrix = rigidPose(t);
+      if (rigidInstance === null) rigidInstance = gpu.rigidMeshes.createInstance(rigidAsset, matrix);
+      else gpu.rigidMeshes.setTransform(rigidInstance, matrix);
+    } else if (rigidInstance !== null) {
+      gpu.rigidMeshes.removeInstance(rigidInstance);
+      rigidInstance = null;
+    }
+    rigidInput.checked = !!enabled;
+  }
+
+  function releaseRigidMover() {
+    setRigidMover(false);
+    // Other instances may still own a reference to the shared demo asset.
+    if (rigidAsset !== null && gpu.rigidMeshes.getInstanceCountForAsset(rigidAsset) === 0) {
+      gpu.rigidMeshes.releaseAsset(rigidAsset);
+    }
+    rigidAsset = null;
+  }
+
+  function loadRigidThreeObject(rootObj, label = 'Rigid mesh') {
+    const { data } = importMeshData(rootObj, label, 1.1, true);
+    const nextAsset = gpu.rigidMeshes.registerAsset(data);
+    let nextInstance;
+    try {
+      nextInstance = gpu.rigidMeshes.createInstance(nextAsset, rigidPose(simTime));
+    } catch (err) {
+      gpu.rigidMeshes.releaseAsset(nextAsset);
+      throw err;
+    }
+    releaseRigidMover();
+    rigidData = data;
+    rigidAsset = nextAsset;
+    rigidInstance = nextInstance;
+    rigidInput.checked = true;
+    selection++;
+    const triangles = data.indices.length / 3;
+    statusEl.value = `${label} · ${triangles.toLocaleString()} moving triangles`;
+    return { triangles, asset: rigidAsset, instance: rigidInstance };
+  }
+
+  function setStaticEnvironment(scene) {
+    gpu.loadScene(scene); // Releases all instance handles in the previous environment.
+    customSdf?.destroy();
+    customSdf = scene.sdfTex ?? null;
+    rigidAsset = null;
+    rigidInstance = null;
+    if (rigidInput.checked) setRigidMover(true, simTime);
   }
 
   async function loadSceneData(name) {
@@ -249,13 +344,15 @@ try {
   }
 
   async function selectScene(name) {
+    const request = ++selection;
+    const sc = await loadSceneData(name);
+    if (request !== selection) return;
     activeScene = name;
     document.querySelectorAll('button[data-scene]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.scene === name)));
-    const sc = await loadSceneData(name);
     gpu.sunDir = name === 'archive' ? [-0.33, -0.45, 0.83] : sunDirFromDeg(sunDeg);
     gpu.emissiveCol = (emissiveOn && name === 'gallery') ? [3.6, 2.0, 0.6] : [0, 0, 0];
-    gpu.loadScene(sc);
-    const cam = boxTestScene && name === 'gallery'
+    setStaticEnvironment(sc);
+    const cam = (boxTestScene || rigidTestScene) && name === 'gallery'
       ? { position: [2.4, -6.2, 2.35], target: [0, -0.6, 0.65] }
       : sc.cam;
     camera.position.set(...cam.position);
@@ -280,6 +377,7 @@ try {
     gpu.emissiveCol = (emissiveOn && activeScene === 'gallery') ? [3.6, 2.0, 0.6] : [0, 0, 0];
     gpu.relight(true);
   };
+  rigidInput.onchange = () => setRigidMover(rigidInput.checked, simTime);
   moversInput.onchange = () => setMovers(moversInput.checked, simTime);
   document.querySelector('#sun').oninput = e => {
     sunDeg = Number(e.target.value);
@@ -289,69 +387,97 @@ try {
   };
   document.querySelector('#clear').onclick = () => gpu.clearHash();
 
-  // ---- Drag-and-Drop .glb / .obj + Live In-Browser WebGPU Compute SDF Baker ----
-  async function loadCustomThreeObject(rootObj, label) {
-    statusEl.value = `Normalizing ${label} & baking exact FP16 SDF on WebGPU…`;
+  // Normalize source Y-up geometry once. Rigid instances move the resulting Z-up asset.
+  function importMeshData(rootObj, label, maxSize, rigid) {
     rootObj.updateWorldMatrix(true, true);
     const box = new T.Box3().setFromObject(rootObj);
     const size = box.getSize(new T.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z, 1e-4);
-    const scale = 4.2 / maxDim;
+    const scale = maxSize / Math.max(size.x, size.y, size.z, 1e-4);
     const center = box.getCenter(new T.Vector3());
-
     const pos = [], nor = [], col = [], rough = [], idx = [];
     const v = new T.Vector3(), nrm = new T.Vector3(), nMat = new T.Matrix3();
+    const transform = new T.Matrix4();
     let metalTris = 0, glossyTris = 0;
-    rootObj.traverse(obj => {
+
+    function addMaterialGroup(g, group, mat, flipped) {
+      const mc = mat?.color ?? {r: 0.76, g: 0.74, b: 0.70};
+      const em = mat?.emissive;
+      const intensity = mat?.emissiveIntensity ?? 1;
+      const rawRough = mat?.roughness ?? 0.42;
+      const isMetal = (mat?.metalness ?? 0) >= 0.5;
+      const encRough = isMetal ? -Math.max(0.03, Math.min(0.95, rawRough)) : Math.max(0.04, Math.min(0.98, rawRough));
+      const { position, normal, color } = g.attributes;
+      const first = Math.max(group.start, g.drawRange.start);
+      const end = Math.min(group.start + group.count, g.index?.count ?? position.count, g.drawRange.start + g.drawRange.count);
+      const vertexIndices = new Map();
+      function packVertex(k) {
+        const src = g.index ? g.index.getX(k) : k;
+        if (vertexIndices.has(src)) return vertexIndices.get(src);
+        const packed = pos.length / 3;
+        vertexIndices.set(src, packed);
+        v.fromBufferAttribute(position, src).applyMatrix4(transform);
+        pos.push((v.x - center.x) * scale, -(v.z - center.z) * scale, (v.y - box.min.y) * scale);
+        nrm.fromBufferAttribute(normal, src).applyMatrix3(nMat).normalize();
+        nor.push(nrm.x, -nrm.z, nrm.y);
+        col.push(
+          Math.min(1, mc.r * (color?.getX(src) ?? 1) + (em?.r ?? 0) * intensity),
+          Math.min(1, mc.g * (color?.getY(src) ?? 1) + (em?.g ?? 0) * intensity),
+          Math.min(1, mc.b * (color?.getZ(src) ?? 1) + (em?.b ?? 0) * intensity)
+        );
+        rough.push(encRough);
+        return packed;
+      }
+      for (let i = first; i + 2 < end; i += 3) {
+        const a = packVertex(i), b = packVertex(i + 1), c = packVertex(i + 2);
+        if (flipped) idx.push(a, c, b);
+        else idx.push(a, b, c);
+        if (isMetal) metalTris++;
+        else if (rawRough < 0.45) glossyTris++;
+      }
+    }
+
+    rootObj.traverseVisible(obj => {
       if (!obj.isMesh || !obj.geometry) return;
       const g = obj.geometry;
-      if (!g.attributes.normal) g.computeVertexNormals();
-      const pAttr = g.attributes.position, nAttr = g.attributes.normal, cAttr = g.attributes.color, iAttr = g.index;
-      const mat = Array.isArray(obj.material) ? obj.material[0] : obj.material;
-      const mc = mat?.color ? [mat.color.r, mat.color.g, mat.color.b] : [0.76, 0.74, 0.70];
-      const em = mat?.emissive ? [mat.emissive.r * (mat.emissiveIntensity ?? 1), mat.emissive.g * (mat.emissiveIntensity ?? 1), mat.emissive.b * (mat.emissiveIntensity ?? 1)] : [0, 0, 0];
-      const metalness = (typeof mat?.metalness === 'number') ? mat.metalness : 0.0;
-      const rawRough = (typeof mat?.roughness === 'number') ? mat.roughness : 0.42;
-      const isMetal = metalness >= 0.5;
-      // Encode metallic conductors with negative roughness (-0.03..-0.95) for full-res mirror/GGX reflections
-      const encRough = isMetal ? -Math.max(0.03, Math.min(0.95, rawRough)) : Math.max(0.04, Math.min(0.98, rawRough));
-      const triCount = (iAttr ? iAttr.count : pAttr.count) / 3;
-      if (isMetal) metalTris += triCount;
-      else if (rawRough < 0.45) glossyTris += triCount;
-      nMat.getNormalMatrix(obj.matrixWorld);
-      const base = pos.length / 3;
-      for (let i = 0; i < pAttr.count; i++) {
-        v.fromBufferAttribute(pAttr, i).applyMatrix4(obj.matrixWorld);
-        // Convert Y-up (glTF/OBJ convention) to Z-up viewer convention, resting on z = 0
-        const wx = (v.x - center.x) * scale;
-        const wy = -(v.z - center.z) * scale;
-        const wz = (v.y - box.min.y) * scale;
-        pos.push(wx, wy, wz);
-        nrm.fromBufferAttribute(nAttr, i).applyMatrix3(nMat).normalize();
-        nor.push(nrm.x, -nrm.z, nrm.y);
-        const vr = cAttr ? cAttr.getX(i) : 1.0;
-        const vg = cAttr ? cAttr.getY(i) : 1.0;
-        const vb = cAttr ? cAttr.getZ(i) : 1.0;
-        col.push(Math.min(1, mc[0] * vr + em[0]), Math.min(1, mc[1] * vg + em[1]), Math.min(1, mc[2] * vb + em[2]));
-        rough.push(encRough);
+      if (rigid && (obj.isSkinnedMesh || g.morphAttributes.position?.length)) {
+        throw Error('Moving mesh import requires rigid geometry. Skinning and morph targets change vertex positions.');
       }
-      if (iAttr) {
-        for (let i = 0; i < iAttr.count; i++) idx.push(base + iAttr.getX(i));
-      } else {
-        for (let i = 0; i < pAttr.count; i++) idx.push(base + i);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      const count = g.index?.count ?? g.attributes.position.count;
+      const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+      const groups = materials.length > 1 && g.groups.length
+        ? g.groups : [{start: 0, count, materialIndex: 0}];
+      const instances = obj.isInstancedMesh ? obj.count : 1;
+      for (let instance = 0; instance < instances; instance++) {
+        if (obj.isInstancedMesh) {
+          obj.getMatrixAt(instance, transform);
+          transform.premultiply(obj.matrixWorld);
+        } else transform.copy(obj.matrixWorld);
+        nMat.getNormalMatrix(transform);
+        const flipped = transform.determinant() < 0;
+        for (const group of groups) {
+          const mat = materials[group.materialIndex];
+          if (mat?.visible === false) continue;
+          if (rigid && (mat?.transparent || mat?.alphaTest > 0)) {
+            throw Error('Moving mesh import requires opaque materials.');
+          }
+          addMaterialGroup(g, group, mat, flipped);
+        }
       }
     });
     if (idx.length < 3) throw Error(`No triangles found in ${label}`);
 
-    // Add a subtle polished studio floor slab under the dropped model so it casts crisp contact shadows & reflections
-    const fBase = pos.length / 3;
-    const fS = 4.6, fH = 0.25;
-    const fVerts = [
-      [-fS,-fS,0, 0,0,1], [fS,-fS,0, 0,0,1], [fS,fS,0, 0,0,1], [-fS,fS,0, 0,0,1],
-      [-fS,fS,-fH, 0,0,-1], [fS,fS,-fH, 0,0,-1], [fS,-fS,-fH, 0,0,-1], [-fS,-fS,-fH, 0,0,-1],
-    ];
-    for (const fv of fVerts) { pos.push(fv[0], fv[1], fv[2]); nor.push(fv[3], fv[4], fv[5]); col.push(0.56, 0.58, 0.62); rough.push(0.18); }
-    idx.push(fBase, fBase+1, fBase+2, fBase, fBase+2, fBase+3, fBase+4, fBase+5, fBase+6, fBase+4, fBase+6, fBase+7);
+    if (!rigid) {
+      // Add a subtle polished studio floor slab under the dropped model so it casts crisp contact shadows & reflections
+      const fBase = pos.length / 3;
+      const fS = 4.6, fH = 0.25;
+      const fVerts = [
+        [-fS,-fS,0, 0,0,1], [fS,-fS,0, 0,0,1], [fS,fS,0, 0,0,1], [-fS,fS,0, 0,0,1],
+        [-fS,fS,-fH, 0,0,-1], [fS,fS,-fH, 0,0,-1], [fS,-fS,-fH, 0,0,-1], [-fS,-fS,-fH, 0,0,-1],
+      ];
+      for (const fv of fVerts) { pos.push(fv[0], fv[1], fv[2]); nor.push(fv[3], fv[4], fv[5]); col.push(0.56, 0.58, 0.62); rough.push(0.18); }
+      idx.push(fBase, fBase+1, fBase+2, fBase, fBase+2, fBase+3, fBase+4, fBase+5, fBase+6, fBase+4, fBase+6, fBase+7);
+    }
 
     const data = {
       positions: new Float32Array(pos),
@@ -360,6 +486,12 @@ try {
       roughness: new Float32Array(rough),
       indices: new Uint32Array(idx),
     };
+    return { data, metalTris, glossyTris };
+  }
+
+  async function loadCustomThreeObject(rootObj, label, request = ++selection) {
+    statusEl.value = `Normalizing ${label} & baking exact FP16 SDF on WebGPU…`;
+    const { data, metalTris, glossyTris } = importMeshData(rootObj, label, 4.2, false);
     const mesh = makeThreeMesh(data);
     const sdfMin = [-5.0, -5.0, -0.5];
     const sdfSpan = [10.0, 10.0, 5.5];
@@ -372,14 +504,31 @@ try {
     const contactBvh = buildContactBVH([mesh], T, { gridSize: 'auto', range: contactRange + 0.0005 });
     const bvhMs = performance.now() - tBvh0;
 
-    const { sdfTex, bakeMs } = await gpu.bakeSDF(globalBvh, { sdfMin, sdfSpan, sdfDims, clip: 1.5 });
-    globalBvh.dispose();
+    let baked;
+    try {
+      baked = await gpu.bakeSDF(globalBvh, { sdfMin, sdfSpan, sdfDims, clip: 1.5 });
+    } catch (err) {
+      contactBvh.dispose();
+      throw err;
+    } finally {
+      globalBvh.dispose();
+    }
+    const { sdfTex, bakeMs } = baked;
+    if (request !== selection) {
+      sdfTex.destroy();
+      contactBvh.dispose();
+      return;
+    }
 
     activeScene = 'custom';
     document.querySelectorAll('button[data-scene]').forEach(b => b.setAttribute('aria-pressed', 'false'));
     gpu.sunDir = sunDirFromDeg(sunDeg);
     gpu.emissiveCol = [0, 0, 0];
-    gpu.loadScene({ ...data, sdfTex, sdfDims, sdfMin, sdfSpan, bvh: contactBvh, contactRange, useGI: true });
+    try {
+      setStaticEnvironment({ ...data, sdfTex, sdfDims, sdfMin, sdfSpan, bvh: contactBvh, contactRange, useGI: true });
+    } finally {
+      contactBvh.dispose();
+    }
     camera.position.set(0.8, -8.4, 3.2);
     controls.target.set(0, 0, 1.5);
     controls.update();
@@ -388,40 +537,61 @@ try {
       document.querySelector('#refl').checked = true;
     }
     const pbrTag = metalTris > 0 ? ` · PBR metal (${Math.round(metalTris)} tris)` : (glossyTris > 0 ? ` · PBR glossy` : '');
-    statusEl.value = `CUSTOM (${label}) · ${(idx.length / 3).toLocaleString()} tris${pbrTag} · GPU SDF baked (${sdfDims.join('×')} FP16) in ${bakeMs.toFixed(1)} ms · BVH ${bvhMs.toFixed(1)} ms`;
-    return { triangles: idx.length / 3, metalTris: Math.round(metalTris), glossyTris: Math.round(glossyTris), bakeMs, bvhMs };
+    statusEl.value = `CUSTOM (${label}) · ${(data.indices.length / 3).toLocaleString()} tris${pbrTag} · GPU SDF baked (${sdfDims.join('×')} FP16) in ${bakeMs.toFixed(1)} ms · BVH ${bvhMs.toFixed(1)} ms`;
+    return { triangles: data.indices.length / 3, metalTris: Math.round(metalTris), glossyTris: Math.round(glossyTris), bakeMs, bvhMs };
   }
 
-  async function handleFile(file) {
-    const ext = file.name.split('.').pop().toLowerCase();
+  async function parseGltf(file, files) {
+    const manager = new T.LoadingManager();
+    const urls = new Map();
+    // File pickers may strip directory names. Match a unique basename when the
+    // glTF references a sibling .bin or image through a relative subdirectory.
+    manager.setURLModifier(uri => {
+      if (/^(?:data:|blob:|https?:)/i.test(uri)) return uri;
+      const path = decodeURIComponent(uri.split(/[?#]/)[0].replace(/^\.\//, ''));
+      const matches = files.filter(f => f.name === path.split('/').pop());
+      const asset = matches.find(f => f.webkitRelativePath === path)
+        ?? (matches.length === 1 ? matches[0] : null);
+      if (!asset) throw Error(`Select the model and its referenced file ${path} together.`);
+      if (!urls.has(asset)) urls.set(asset, URL.createObjectURL(asset));
+      return urls.get(asset);
+    });
     try {
-      if (ext === 'obj') {
-        const text = await file.text();
-        const obj = new OBJLoader().parse(text);
-        await loadCustomThreeObject(obj, file.name);
-      } else if (ext === 'glb' || ext === 'gltf') {
-        const buf = await file.arrayBuffer();
-        const gltf = await new GLTFLoader().parseAsync(buf, '');
-        await loadCustomThreeObject(gltf.scene, file.name);
-      } else {
-        throw Error('Please drop a .glb, .gltf, or .obj file.');
-      }
+      return (await new GLTFLoader(manager).parseAsync(await file.arrayBuffer(), '')).scene;
+    } finally {
+      for (const url of urls.values()) URL.revokeObjectURL(url);
+    }
+  }
+
+  async function handleFiles(fileList) {
+    const files = Array.from(fileList);
+    const file = files.find(f => /\.(?:obj|glb|gltf)$/i.test(f.name));
+    const request = ++selection;
+    const rigid = importRole.value === 'rigid';
+    try {
+      if (!file) throw Error('Choose a .glb, .gltf, or .obj model.');
+      const object = /\.obj$/i.test(file.name)
+        ? new OBJLoader().parse(await file.text())
+        : await parseGltf(file, files);
+      if (request !== selection) return;
+      if (rigid) loadRigidThreeObject(object, file.name);
+      else await loadCustomThreeObject(object, file.name, request);
     } catch (e) {
-      statusEl.value = `Load failed: ${e.message}`;
-      throw e;
+      if (request === selection) statusEl.value = `Load failed: ${e.message}`;
     }
   }
 
   const fileIn = document.querySelector('#file-in');
   document.querySelector('#load-btn').onclick = () => fileIn.click();
-  fileIn.onchange = () => { if (fileIn.files?.[0]) handleFile(fileIn.files[0]); fileIn.value = ''; };
+  fileIn.onchange = () => { if (fileIn.files.length) handleFiles(fileIn.files); fileIn.value = ''; };
   const viewEl = document.querySelector('#view');
   viewEl.addEventListener('dragover', e => { e.preventDefault(); viewEl.classList.add('dragover'); });
   viewEl.addEventListener('dragleave', () => viewEl.classList.remove('dragover'));
-  viewEl.addEventListener('drop', e => { e.preventDefault(); viewEl.classList.remove('dragover'); if (e.dataTransfer?.files?.[0]) handleFile(e.dataTransfer.files[0]); });
+  viewEl.addEventListener('drop', e => { e.preventDefault(); viewEl.classList.remove('dragover'); if (e.dataTransfer?.files.length) handleFiles(e.dataTransfer.files); });
 
   await selectScene('gallery');
   setMovers(boxTestScene, simTime);
+  setRigidMover(rigidTestScene, simTime);
 
   let running = true, fCount = 0, fStart = performance.now();
   function renderOnce() {
@@ -441,6 +611,7 @@ try {
       gpu.relight(true);
     }
     if (moversOn) updateMovers(simTime);
+    if (rigidInstance !== null) gpu.rigidMeshes.setTransform(rigidInstance, rigidPose(simTime));
     renderOnce();
     fCount++;
     const dt = now - fStart;
@@ -461,6 +632,10 @@ try {
       return loadCustomThreeObject(obj, name);
     },
     loadCustomThreeObject,
+    loadRigidThreeObject,
+    loadRigidOBJ: (text, name = 'rigid.obj') => loadRigidThreeObject(new OBJLoader().parse(text), name),
+    setRigidMover,
+    get rigidMover() { return { asset: rigidAsset, instance: rigidInstance, data: rigidData, matrix: rigidMatrix.elements.slice() }; },
     setMovers,
     stopLoop: () => { running = false; },
     setSun: (deg) => { sunDeg = deg; gpu.sunDir = sunDirFromDeg(deg); gpu.relight(true); },

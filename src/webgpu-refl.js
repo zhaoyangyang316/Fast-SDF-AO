@@ -4,7 +4,66 @@
 // - Temporal reprojection EMA + roughness-guided 3x3 bilateral spatial filter
 
 import { DYNAMIC_SHAPES_WGSL } from './webgpu-dynamic.js';
-export const REFL_TRACE_WGSL = /* wgsl */`
+import { RIGID_MESH_WGSL } from './webgpu-rigid-wgsl.js';
+
+// At an offscreen moving hit the BVH supplies the material directly. Evaluate
+// its outgoing radiance against the current lights and geometry in world space.
+export const rigidRadianceWGSL = (sampleDistance) => /* wgsl */`
+fn rigidHitVisibility(p: vec3<f32>, n: vec3<f32>, l: vec3<f32>, limit: f32) -> f32 {
+  let origin = p + n * 0.001;
+  if (rigidAnyHit(origin, l, 0.0005, limit)) { return 0.0; }
+  var t = 0.045;
+  var visibility = 1.0;
+  for (var i = 0u; i < 24u && t < limit; i++) {
+    let d = ${sampleDistance}(origin + l * t);
+    if (d < 0.008) { return 0.0; }
+    visibility = min(visibility, 8.0 * d / t);
+    t += max(0.018, 0.8 * d);
+  }
+  return clamp(visibility, 0.0, 1.0);
+}
+
+fn rigidDirectLight(hit: RigidHit, p: vec3<f32>, n: vec3<f32>, v: vec3<f32>,
+                    l: vec3<f32>, limit: f32, intensity: vec3<f32>) -> vec3<f32> {
+  let nl = dot(n, l);
+  if (nl <= 0.0) { return vec3<f32>(0.0); }
+  let metal = hit.roughness < 0.0;
+  let rough = clamp(abs(hit.roughness), 0.05, 1.0);
+  let nv = max(0.001, dot(n, v));
+  let halfVector = (l + v) / max(length(l + v), 1e-6);
+  let nh = max(0.0, dot(n, halfVector));
+  let vh = max(0.0, dot(v, halfVector));
+  let a2 = pow(rough, 4.0);
+  let denom = nh * nh * (a2 - 1.0) + 1.0;
+  let distribution = a2 / max(3.141593 * denom * denom, 1e-6);
+  let k = (rough + 1.0) * (rough + 1.0) * 0.125;
+  let smith = 0.25 / ((nl * (1.0 - k) + k) * (nv * (1.0 - k) + k));
+  let f0 = select(vec3<f32>(0.04), hit.color, metal);
+  let fresnel = f0 + (1.0 - f0) * pow(1.0 - vh, 5.0);
+  let diffuse = select(hit.color * (1.0 - fresnel), vec3<f32>(0.0), metal);
+  let visibility = rigidHitVisibility(p, n, l, limit);
+  return intensity * nl * visibility * (diffuse + fresnel * distribution * smith);
+}
+
+fn rigidRadiance(hit: RigidHit, p: vec3<f32>, dir: vec3<f32>, sunDir: vec3<f32>,
+                 orb: vec4<f32>, orbColor: vec3<f32>) -> vec3<f32> {
+  let n = faceForward(hit.normal, dir, hit.geometricNormal);
+  let sky = mix(vec3<f32>(0.22, 0.25, 0.30), vec3<f32>(0.55, 0.65, 0.78),
+                clamp(0.5 + 0.5 * n.z, 0.0, 1.0));
+  var rad = hit.color * sky * select(0.58, 0.20, hit.roughness < 0.0);
+  rad += rigidDirectLight(hit, p, n, -dir, normalize(sunDir), 10.5, vec3<f32>(3.10, 2.90, 2.55));
+  let toOrb = orb.xyz - p;
+  let d = length(toOrb);
+  if (dot(orbColor, orbColor) > 1e-4 && d > 0.001 && d < 7.5) {
+    rad += rigidDirectLight(hit, p, n, -dir, toOrb / d, max(0.0, d - orb.w),
+                            orbColor * (2.8 / (0.32 + d * d)));
+  }
+  return rad;
+}
+`;
+
+export const reflectionTraceWGSL = (rigid) => /* wgsl */`
+${rigid ? RIGID_MESH_WGSL + rigidRadianceWGSL('sampleSDF') : ''}
 ${DYNAMIC_SHAPES_WGSL}
 struct ReflU {
   curViewProj: mat4x4<f32>,
@@ -348,6 +407,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     }
   }
 
+  ${rigid ? `let rigidLimit = min(orbT, select(u.params.w, nearHitT, nearHit));
+  let rigidSurface = rigidClosestHit(origin, R, 0.0005, rigidLimit);` : ''}
   if (nearHit && nearHitT < orbT) {
     hitAny = true;
     hitDist = nearHitT;
@@ -358,6 +419,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     let maxSteps = max(u.extra.w, 12u);
     for (var k = 0u; k < maxSteps; k++) {
       if (s >= orbT) { break; }
+      ${rigid ? 'if (rigidSurface.valid != 0u && s >= rigidSurface.t) { break; }' : ''}
       let d = sampleSDF(origin + R * s);
       if (d > 100.0) { break; }
       if (d < 0.025) {
@@ -368,11 +430,19 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         rad = evalHitRadiance(origin + R * sRef, R);
         break;
       }
+      ${rigid ? 'if (rigidSurface.valid != 0u && s >= rigidSurface.t - 0.0005) { break; }' : ''}
       s += select(max(d * 0.85, 0.035), d * 1.15, d > 0.28);
+      ${rigid ? 'if (rigidSurface.valid != 0u) { s = min(s, rigidSurface.t - 0.0005); }' : ''}
       if (s > u.params.w) { break; }
     }
   }
 
+  ${rigid ? `if (rigidSurface.valid != 0u && rigidSurface.t < hitDist) {
+    hitAny = true;
+    hitDist = rigidSurface.t;
+    rad = rigidRadiance(rigidSurface, origin + R * hitDist, R,
+                        u.sunDir.xyz, u.emissivePos, u.emissiveCol.rgb);
+  }` : ''}
   if (orbT < hitDist) {
     hitAny = true;
     hitDist = orbT;
@@ -393,6 +463,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   textureStore(outRefl, q, vec4<f32>(rad, normDist));
 }
 `;
+
+export const REFL_TRACE_WGSL = reflectionTraceWGSL(false);
 
 export const REFL_FILTER_WGSL = /* wgsl */`
 struct ReflFiltU {

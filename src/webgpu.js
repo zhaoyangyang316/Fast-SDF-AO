@@ -6,9 +6,11 @@
 // - Real-Time Glossy / Rough SDF Specular Reflections (GGX BVH2 -> SDF -> radVol + direct Emissive Orb hit)
 // - Live In-Browser WebGPU Compute Exact-BVH SDF Baker (pack2x16float -> r16float 3D texture)
 
+import { RigidMeshScene } from './webgpu-rigid.js';
 import { DYNAMIC_SHAPES_WGSL } from './webgpu-dynamic.js';
 import { bakeSDFOnGPU } from './webgpu-bake.js';
-import { REFL_TRACE_WGSL, REFL_FILTER_WGSL } from './webgpu-refl.js';
+import { REFL_TRACE_WGSL, REFL_FILTER_WGSL, reflectionTraceWGSL, rigidRadianceWGSL } from './webgpu-refl.js';
+import { RIGID_MESH_WGSL } from './webgpu-rigid-wgsl.js';
 
 export { bakeSDFOnGPU };
 
@@ -51,7 +53,7 @@ struct VOut {
   @location(2) colRough: vec4<f32>,
   @location(3) viewZ: f32,
 };
-@vertex fn vs(v: VIn) -> VOut {
+fn projectVertex(v: VIn) -> VOut {
   var o: VOut;
   let wp = vec4<f32>(v.pos, 1.0);
   o.clip = cam.viewProj * wp;
@@ -61,6 +63,7 @@ struct VOut {
   o.viewZ = -(cam.view * wp).z;
   return o;
 }
+@vertex fn vs(v: VIn) -> VOut { return projectVertex(v); }
 @vertex fn vsDyn(v: DynVIn, @builtin(instance_index) inst: u32) -> VOut {
   var o: VOut;
   let pr = cam.dynPosRad[inst];
@@ -333,7 +336,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 }
 `;
 
-const TRACE_WGSL = /* wgsl */`
+const traceWGSL = (rigid) => /* wgsl */`
+${rigid ? RIGID_MESH_WGSL + rigidRadianceWGSL('sampleSDF') : ''}
 ${DYNAMIC_SHAPES_WGSL}
 struct TraceU {
   viewProj: mat4x4<f32>,
@@ -477,7 +481,8 @@ fn evalGIHitRadiance(hitP: vec3<f32>, rayDir: vec3<f32>) -> vec3<f32> {
   let dynR = evalMoverRadiance(hitP);
   if (dynR.a > 0.5) { return dynR.rgb; }
   let clip = u.viewProj * vec4<f32>(hitP, 1.0);
-  if (clip.w > 0.1 && u.params.z > 0.5) {
+  let historyValid = (u.extra.z & 16u) == 0u && u.params.z > 0.5;
+  if (clip.w > 0.1${rigid ? '' : ' && historyValid'}) {
     let ndc = clip.xy / clip.w;
     if (abs(ndc.x) < 0.99 && abs(ndc.y) < 0.99) {
       let uv = vec2<f32>(ndc.x * 0.5 + 0.5, 0.5 - ndc.y * 0.5);
@@ -488,8 +493,18 @@ fn evalGIHitRadiance(hitP: vec3<f32>, rayDir: vec3<f32>) -> vec3<f32> {
         let hn = normalize(gnr.xyz);
         if (dot(hn, -rayDir) > 0.02) {
           let halb = textureLoad(gAlbedoRough, iq, 0).rgb;
-          let mt = textureLoad(prevHistMeta, iq, 0);
           let sDir = normalize(u.sunDirScale.xyz);
+          ${rigid ? `var mt = vec2<f32>(1.0);
+          if (historyValid) {
+            mt = textureLoad(prevHistMeta, iq, 0).xy;
+          } else {
+            // Moving props invalidate shadows even on stationary receivers.
+            let hitPixel = vec2<f32>(iq) + 0.5;
+            mt.x = sdfSunShadow(gpd.xyz, hn, sDir, hitPixel, u32(u.params.z));
+            if (dot(u.emissiveCol.rgb, u.emissiveCol.rgb) > 1e-4) {
+              mt.y = sdfPointShadow(gpd.xyz, hn, u.emissivePos.xyz, u.emissivePos.w, hitPixel, u32(u.params.z));
+            }
+          }` : 'let mt = textureLoad(prevHistMeta, iq, 0);'}
           let ndl = max(0.0, dot(hn, sDir));
           let sunSh = clamp(mt.x, 0.0, 1.0);
           let skyF = 0.42 + 0.32 * max(0.0, hn.z);
@@ -623,6 +638,7 @@ fn sdfSunShadow(pos: vec3<f32>, nor: vec3<f32>, sDir: vec3<f32>, px: vec2<f32>, 
   let rad = 0.028 * sqrt(u1);
   let ang = 6.2831853 * u2;
   let dir = normalize(sDir + st * (rad * cos(ang)) + sb * (rad * sin(ang)));
+  ${rigid ? 'if (rigidAnyHit(pos + nor * 0.001, dir, 0.0005, 10.5)) { return 0.0; }' : ''}
   let ro = pos + nor * 0.028 + dir * 0.015;
   var t = 0.012 + 0.055 * fract(ign(px + vec2<f32>(7.0, 41.0)) + vdc2(frame + 17u));
   var res = 1.0;
@@ -659,6 +675,7 @@ fn sdfPointShadow(pos: vec3<f32>, nor: vec3<f32>, lp: vec3<f32>, rLim: f32, px: 
   let ro = pos + nor * 0.025 + lDir * 0.012;
   var t = 0.012 + 0.045 * fract(ign(px + vec2<f32>(13.0, 47.0)) + vdc2(frame + 23u));
   let tMax = dist - rLim * 0.35 - 0.02;
+  ${rigid ? 'if (rigidAnyHit(pos + nor * 0.001, lDir, 0.0005, tMax)) { return 0.0; }' : ''}
   var res = 1.0;
   for (var s = 0u; s < 36u; s++) {
     let d = sampleSDF(ro + lDir * t);
@@ -851,6 +868,11 @@ fn main(
         }
       }
 
+      ${rigid ? `// Test rigid triangles independently of the static empty-sphere shortcut.
+      // A nearer static/analytic contact sets a tight upper bound.
+      let rayLimit = select(select(1.12, u.emissiveCol.w, useGI), tHit, blocked);
+      let rigidSurface = rigidClosestHit(origin, w, 0.0005, rayLimit);
+      let beforeRigid = rigidSurface.t - 0.0005;` : ''}
       var v = 1.0;
       var rad = vec3<f32>(0.0);
       var rayHitT = u.emissiveCol.w;
@@ -883,12 +905,15 @@ fn main(
         var minD = 1e4;
         var tMinD = cRange;
         for (var k = 0u; k < 16u; k++) {
+          ${rigid ? 'if (rigidSurface.valid != 0u && s >= rigidSurface.t) { break; }' : ''}
           let d = sampleSDF(p + w * s);
           if (d < minD) { minD = d; tMinD = s; }
           let e = max(min(0.025, 0.1 * s * cosn), 1e-6);
           v = min(v, clamp((d + e) / (4.0 * e), 0.0, 1.0));
           if (v < 0.01) { break; }
+          ${rigid ? 'if (rigidSurface.valid != 0u && s >= beforeRigid) { break; }' : ''}
           s += max(d, 0.072);
+          ${rigid ? 'if (rigidSurface.valid != 0u) { s = min(s, beforeRigid); }' : ''}
           if (s > 1.12) { break; }
         }
         if (useGI) {
@@ -900,6 +925,7 @@ fn main(
             var hitFar = false;
             let giMaxSteps = max(u.extra.z >> 8u, 8u);
             for (var k = 0u; k < giMaxSteps; k++) {
+              ${rigid ? 'if (rigidSurface.valid != 0u && sg >= rigidSurface.t) { break; }' : ''}
               let d = sampleSDF(p + w * sg);
               if (d > 100.0) { break; }
               if (d < 0.045) {
@@ -908,7 +934,9 @@ fn main(
                 hitFar = true;
                 break;
               }
+              ${rigid ? 'if (rigidSurface.valid != 0u && sg >= beforeRigid) { break; }' : ''}
               sg += select(max(d, 0.08), d * 1.15, d > 0.30);
+              ${rigid ? 'if (rigidSurface.valid != 0u) { sg = min(sg, beforeRigid); }' : ''}
               if (sg > u.emissiveCol.w) { break; }
             }
             if (!hitFar) {
@@ -920,9 +948,25 @@ fn main(
             bestShare = HitRec(vec4<f32>(p + w * rayHitT, rayHitT), vec4<f32>(-w, 1.0), vec4<f32>(rad, v));
           }
         } else if (i == 0u && v < 0.5) {
+          ${rigid ? 'rayHitT = tMinD;' : ''}
           bestShare = HitRec(vec4<f32>(p + w * tMinD, tMinD), vec4<f32>(-w, 1.0), vec4<f32>(0.0, 0.0, 0.0, v));
         }
       }
+      ${rigid ? `if (rigidSurface.valid != 0u) {
+        if (rigidSurface.t <= 1.12) { v = 0.0; }
+        if (rigidSurface.t < rayHitT) {
+          rayHitT = rigidSurface.t;
+          let hitP = origin + w * rayHitT;
+          if (useGI) {
+            rad = rigidRadiance(rigidSurface, hitP, w, u.sunDirScale.xyz,
+                                u.emissivePos, u.emissiveCol.rgb);
+          }
+          if (i == 0u) {
+            let hn = faceForward(rigidSurface.normal, w, rigidSurface.geometricNormal);
+            bestShare = HitRec(vec4<f32>(hitP, rayHitT), vec4<f32>(hn, 1.0), vec4<f32>(rad, v));
+          }
+        }
+      }` : ''}
       visSum += v;
       giSum += rad;
       hitDistSum += rayHitT;
@@ -965,6 +1009,9 @@ fn main(
             if (pi < 2u) {
               visOk = sampleSDF(p + wH * min(dH * 0.5, 0.45)) > -0.02;
             }
+            ${rigid ? `if (visOk) {
+              visOk = !rigidAnyHit(p + wH * 0.001, wH, 0.0005, dH - 0.003);
+            }` : ''}
             if (visOk) {
               // Exact ReSTIR-GI spatial Jacobian (clamped to suppress fireflies)
               let jac = clamp((hr.posDist.w * hr.posDist.w) / max(dH * dH, 0.05), 0.25, 1.8);
@@ -1037,6 +1084,8 @@ fn main(
   textureStore(outMeta, vec2<i32>(gid.xy), vec4<f32>(sunSh, orbSh, normHit, hitFlag));
 }
 `;
+
+const TRACE_WGSL = traceWGSL(false);
 
 const TEMPORAL_WGSL = /* wgsl */`
 struct TempU {
@@ -1260,7 +1309,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 }
 `;
 
-const COMPOSITE_WGSL = /* wgsl */`
+const compositeWGSL = (rigid) => /* wgsl */`
+${rigid ? RIGID_MESH_WGSL + rigidRadianceWGSL('compSampleSDF') : ''}
 ${DYNAMIC_SHAPES_WGSL}
 struct CompU {
   viewProj: mat4x4<f32>,
@@ -1300,7 +1350,7 @@ struct VOut {
   @location(1) wNor: vec3<f32>,
   @location(2) colRough: vec4<f32>,
 };
-@vertex fn vs(v: VIn) -> VOut {
+fn projectVertex(v: VIn) -> VOut {
   var o: VOut;
   o.clip = u.viewProj * vec4<f32>(v.pos, 1.0);
   o.wPos = v.pos;
@@ -1308,6 +1358,7 @@ struct VOut {
   o.colRough = v.colRough;
   return o;
 }
+@vertex fn vs(v: VIn) -> VOut { return projectVertex(v); }
 @vertex fn vsDyn(v: DynVIn, @builtin(instance_index) inst: u32) -> VOut {
   var o: VOut;
   let pr = u.dynPosRad[inst];
@@ -1390,8 +1441,10 @@ fn traceMirrorFullRes(p: vec3<f32>, n: vec3<f32>, V: vec3<f32>) -> vec3<f32> {
       hitDist = contact.w;
     }
   }
+  ${rigid ? 'let rigidSurface = rigidClosestHit(ro, R, 0.0005, min(orbT, hitDist));' : ''}
   for (var k = 0u; k < 44u; k++) {
     if (hitAny || s >= orbT) { break; }
+    ${rigid ? 'if (rigidSurface.valid != 0u && s >= rigidSurface.t) { break; }' : ''}
     let d = compSampleSDF(ro + R * s);
     if (d > 100.0) { break; }
     let hitEps = select(0.015, 0.004, k < 2u);
@@ -1400,9 +1453,15 @@ fn traceMirrorFullRes(p: vec3<f32>, n: vec3<f32>, V: vec3<f32>) -> vec3<f32> {
       hitDist = max(0.04, s + d * 0.5);
       break;
     }
+    ${rigid ? 'if (rigidSurface.valid != 0u && s >= rigidSurface.t - 0.0005) { break; }' : ''}
     s += max(d * 0.85, 0.025);
+    ${rigid ? 'if (rigidSurface.valid != 0u) { s = min(s, rigidSurface.t - 0.0005); }' : ''}
     if (s > 10.5) { break; }
   }
+  ${rigid ? `if (rigidSurface.valid != 0u && rigidSurface.t < hitDist) {
+    return rigidRadiance(rigidSurface, ro + R * rigidSurface.t, R,
+                         u.sunDir.xyz, u.emissivePos, u.emissiveCol.rgb);
+  }` : ''}
   if (orbT < hitDist) { return u.emissiveCol.rgb * 1.9; }
   if (!hitAny) {
     let skyT = clamp(R.z * 0.5 + 0.5, 0.0, 1.0);
@@ -1588,6 +1647,8 @@ fn traceMirrorFullRes(p: vec3<f32>, n: vec3<f32>, V: vec3<f32>) -> vec3<f32> {
   return vec4<f32>(clamp(srgb, vec3<f32>(0.0), vec3<f32>(1.0)), 1.0);
 }
 `;
+
+const COMPOSITE_WGSL = compositeWGSL(false);
 
 const ORB_WGSL = /* wgsl */`
 struct OrbU {
@@ -1798,6 +1859,38 @@ function mulMat4(a, b) {
   return out;
 }
 
+// Static and rigid variants share group 0, including the ping-pong history bindings.
+// Group 1 is only used by rigid pipelines and can be rebound after an arena grows.
+function createSceneLayouts(device) {
+  const { COMPUTE, VERTEX, FRAGMENT } = GPUShaderStage;
+  const uniform = { buffer: { type: 'uniform' } };
+  const storage = { buffer: { type: 'read-only-storage' } };
+  const writable = { buffer: { type: 'storage' } };
+  const tex = { texture: { sampleType: 'unfilterable-float' } };
+  const volume = { texture: { viewDimension: '3d', sampleType: 'float' } };
+  const sampler = { sampler: { type: 'filtering' } };
+  const output = { storageTexture: { format: 'rgba16float', access: 'write-only' } };
+  const layout = (visibility, bindings) => device.createBindGroupLayout({
+    entries: bindings.map((bindingType, binding) => ({ visibility, binding, ...bindingType })),
+  });
+  return {
+    raster: layout(VERTEX, [uniform]),
+    trace: layout(COMPUTE, [uniform, tex, tex, volume, volume, sampler, storage, storage, storage, writable, output, output, writable, tex, tex]),
+    reflect: layout(COMPUTE, [uniform, tex, tex, tex, volume, volume, sampler, storage, storage, storage, tex, tex, output]),
+    composite: layout(FRAGMENT, [{ ...uniform, visibility: VERTEX | FRAGMENT }, tex, tex, tex, tex, tex, volume, volume, tex, sampler]),
+    rigid: layout(COMPUTE | VERTEX | FRAGMENT, [storage, storage, storage]),
+  };
+}
+
+const RIGID_VERTEX_WGSL = /* wgsl */`
+@vertex fn vsRigid(v: VIn, @builtin(instance_index) instance: u32) -> VOut {
+  var world = v;
+  world.pos = rigidWorldPosition(instance, v.pos);
+  world.nor = rigidWorldNormal(instance, v.nor);
+  return projectVertex(world);
+}
+`;
+
 export class WebGPUFastSDFAO {
   constructor(device, context, format, { width = 1280, height = 720, hasTimestamp = false } = {}) {
     this.device = device;
@@ -1824,6 +1917,9 @@ export class WebGPUFastSDFAO {
     this.lastGpuMs = 0;
     this.lastSkipPct = 0;
     this.sceneRes = null;
+    this.rigidMeshes = new RigidMeshScene(device);
+    this._rigidMotion = false;
+    this._sceneLayouts = createSceneLayouts(device);
     this._initPipelines();
     this._initSharedTargets();
   }
@@ -1851,45 +1947,7 @@ export class WebGPUFastSDFAO {
 
   _initPipelines() {
     const d = this.device;
-    const vLayout = {
-      arrayStride: 40,
-      attributes: [
-        { shaderLocation: 0, offset: 0, format: 'float32x3' },
-        { shaderLocation: 1, offset: 12, format: 'float32x3' },
-        { shaderLocation: 2, offset: 24, format: 'float32x4' },
-      ],
-    };
-
-    const gMod = d.createShaderModule({ code: GBUFFER_WGSL });
-    const dynVLayout = {
-      arrayStride: 24,
-      attributes: [
-        { shaderLocation: 0, offset: 0, format: 'float32x3' },
-        { shaderLocation: 1, offset: 12, format: 'float32x3' },
-      ],
-    };
-    this.gPipe = d.createRenderPipeline({
-      layout: 'auto',
-      vertex: { module: gMod, entryPoint: 'vs', buffers: [vLayout] },
-      fragment: {
-        module: gMod,
-        entryPoint: 'fs',
-        targets: [{ format: 'rgba32float' }, { format: 'rgba16float' }, { format: 'rgba8unorm' }],
-      },
-      primitive: { topology: 'triangle-list', cullMode: 'back' },
-      depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
-    });
-    this.dynGPipe = d.createRenderPipeline({
-      layout: 'auto',
-      vertex: { module: gMod, entryPoint: 'vsDyn', buffers: [dynVLayout] },
-      fragment: {
-        module: gMod,
-        entryPoint: 'fs',
-        targets: [{ format: 'rgba32float' }, { format: 'rgba16float' }, { format: 'rgba8unorm' }],
-      },
-      primitive: { topology: 'triangle-list', cullMode: 'back' },
-      depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
-    });
+    this.scenePipes = this._createScenePipelines(false);
 
     const relMod = d.createShaderModule({ code: RELIGHT_WGSL });
     this.relightDirectPipe = d.createComputePipeline({ layout: 'auto', compute: { module: relMod, entryPoint: 'relightDirect' } });
@@ -1898,41 +1956,19 @@ export class WebGPUFastSDFAO {
     const decMod = d.createShaderModule({ code: HASH_DECAY_WGSL });
     this.hashDecayPipe = d.createComputePipeline({ layout: 'auto', compute: { module: decMod, entryPoint: 'main' } });
 
-    const trMod = d.createShaderModule({ code: TRACE_WGSL });
-    this.tracePipe = d.createComputePipeline({ layout: 'auto', compute: { module: trMod, entryPoint: 'main' } });
-
     const tmpMod = d.createShaderModule({ code: TEMPORAL_WGSL });
     this.tempPipe = d.createComputePipeline({ layout: 'auto', compute: { module: tmpMod, entryPoint: 'main' } });
 
     const dnMod = d.createShaderModule({ code: DENOISE_WGSL });
     this.denoisePipe = d.createComputePipeline({ layout: 'auto', compute: { module: dnMod, entryPoint: 'main' } });
 
-    const rTrMod = d.createShaderModule({ code: REFL_TRACE_WGSL });
-    this.reflTracePipe = d.createComputePipeline({ layout: 'auto', compute: { module: rTrMod, entryPoint: 'main' } });
-
     const rFlMod = d.createShaderModule({ code: REFL_FILTER_WGSL });
     this.reflFiltPipe = d.createComputePipeline({ layout: 'auto', compute: { module: rFlMod, entryPoint: 'main' } });
-
-    const cpMod = d.createShaderModule({ code: COMPOSITE_WGSL });
-    this.compPipe = d.createRenderPipeline({
-      layout: 'auto',
-      vertex: { module: cpMod, entryPoint: 'vs', buffers: [vLayout] },
-      fragment: { module: cpMod, entryPoint: 'fs', targets: [{ format: this.format }] },
-      primitive: { topology: 'triangle-list', cullMode: 'back' },
-      depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
-    });
-    this.dynCompPipe = d.createRenderPipeline({
-      layout: 'auto',
-      vertex: { module: cpMod, entryPoint: 'vsDyn', buffers: [dynVLayout] },
-      fragment: { module: cpMod, entryPoint: 'fs', targets: [{ format: this.format }] },
-      primitive: { topology: 'triangle-list', cullMode: 'back' },
-      depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
-    });
 
     const orbMod = d.createShaderModule({ code: ORB_WGSL });
     this.orbPipe = d.createRenderPipeline({
       layout: 'auto',
-      vertex: { module: orbMod, entryPoint: 'vs', buffers: [dynVLayout] },
+      vertex: { module: orbMod, entryPoint: 'vs', buffers: [{ arrayStride: 24, attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }] }] },
       fragment: { module: orbMod, entryPoint: 'fs', targets: [{ format: this.format }] },
       primitive: { topology: 'triangle-list', cullMode: 'back' },
       depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
@@ -1948,6 +1984,108 @@ export class WebGPUFastSDFAO {
     this.orbBG = d.createBindGroup({ layout: this.orbPipe.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: this.orbUBuf } }] });
 
     this.linSamp = d.createSampler({ magFilter: 'linear', minFilter: 'linear', addressModeU: 'clamp-to-edge', addressModeV: 'clamp-to-edge', addressModeW: 'clamp-to-edge' });
+  }
+
+  _createScenePipelines(rigid) {
+    const d = this.device;
+    const groups = this._sceneLayouts;
+    const pipelineLayout = group0 => d.createPipelineLayout({
+      bindGroupLayouts: rigid ? [group0, groups.rigid] : [group0],
+    });
+    const vLayout = {
+      arrayStride: 40,
+      attributes: [
+        { shaderLocation: 0, offset: 0, format: 'float32x3' },
+        { shaderLocation: 1, offset: 12, format: 'float32x3' },
+        { shaderLocation: 2, offset: 24, format: 'float32x4' },
+      ],
+    };
+
+    const dynVLayout = {
+      arrayStride: 24,
+      attributes: [
+        { shaderLocation: 0, offset: 0, format: 'float32x3' },
+        { shaderLocation: 1, offset: 12, format: 'float32x3' },
+      ],
+    };
+    const compute = (code, group0) => d.createComputePipeline({
+      layout: pipelineLayout(group0),
+      compute: { module: d.createShaderModule({ code }), entryPoint: 'main' },
+    });
+    const render = (layout, module, targets, entryPoint, vertices) => d.createRenderPipeline({
+      layout,
+      vertex: { module, entryPoint, buffers: [vertices] },
+      fragment: { module, entryPoint: 'fs', targets },
+      primitive: { topology: 'triangle-list', cullMode: 'back' },
+      depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
+    });
+    const gbuffer = d.createShaderModule({ code: rigid
+      ? GBUFFER_WGSL + RIGID_MESH_WGSL + RIGID_VERTEX_WGSL
+      : GBUFFER_WGSL });
+    const composite = d.createShaderModule({ code: rigid
+      ? compositeWGSL(true) + RIGID_VERTEX_WGSL
+      : COMPOSITE_WGSL });
+    const gLayout = pipelineLayout(groups.raster);
+    const cLayout = pipelineLayout(groups.composite);
+    const mrt = [{ format: 'rgba32float' }, { format: 'rgba16float' }, { format: 'rgba8unorm' }];
+    const color = [{ format: this.format }];
+    return {
+      // Static and analytic G-buffer draws use the original vertex path for all scenes.
+      gbuffer: rigid ? null : render(gLayout, gbuffer, mrt, 'vs', vLayout),
+      analyticGBuffer: rigid ? null : render(gLayout, gbuffer, mrt, 'vsDyn', dynVLayout),
+      rigidGBuffer: rigid ? render(gLayout, gbuffer, mrt, 'vsRigid', vLayout) : null,
+      trace: compute(rigid ? traceWGSL(true) : TRACE_WGSL, groups.trace),
+      reflect: compute(rigid ? reflectionTraceWGSL(true) : REFL_TRACE_WGSL, groups.reflect),
+      composite: render(cLayout, composite, color, 'vs', vLayout),
+      analyticComposite: render(cLayout, composite, color, 'vsDyn', dynVLayout),
+      rigidComposite: rigid ? render(cLayout, composite, color, 'vsRigid', vLayout) : null,
+    };
+  }
+
+  _prepareRigidMeshes() {
+    const { changed, bindingsChanged } = this.rigidMeshes.prepare();
+    if (changed) {
+      // A moving occluder also invalidates lighting history on stationary receivers.
+      this.hasPrev = false;
+      this.stillFrames = 0;
+      this._lastCompBG = null;
+      this.lastSkipPct = 0;
+    } else if (this._rigidMotion) {
+      // No writes to the hash during motion. Discard pre-motion values before reuse.
+      this.clearHash();
+    }
+    this._rigidMotion = changed;
+    if (bindingsChanged) this.rigidBG = null;
+    if (!this.rigidMeshes.count) return this.scenePipes;
+    this.rigidPipes ??= this._createScenePipelines(true);
+    if (!this.rigidBG) {
+      const { instanceBuffer, tlasBuffer, geometryBuffer } = this.rigidMeshes;
+      this.rigidBG = this.device.createBindGroup({
+        layout: this._sceneLayouts.rigid,
+        entries: [instanceBuffer, tlasBuffer, geometryBuffer].map((buffer, binding) => ({
+          binding, resource: { buffer },
+        })),
+      });
+    }
+    return this.rigidPipes;
+  }
+
+  _drawComposite(pass, pipes, lighting, dynPR, dynCount) {
+    const s = this.sceneRes;
+    pass.setPipeline(pipes.composite);
+    pass.setBindGroup(0, lighting);
+    if (this.rigidMeshes.count) pass.setBindGroup(1, this.rigidBG);
+    pass.setVertexBuffer(0, s.vb);
+    pass.setIndexBuffer(s.ib, 'uint32');
+    pass.drawIndexed(s.indexCount);
+    if (dynCount) {
+      pass.setPipeline(pipes.analyticComposite);
+      this._drawMovers(pass, dynPR, dynCount);
+    }
+    if (this.rigidMeshes.count) {
+      pass.setPipeline(pipes.rigidComposite);
+      this.rigidMeshes.draw(pass);
+    }
   }
 
   _drawMovers(pass, dynPR, count) {
@@ -2024,6 +2162,9 @@ export class WebGPUFastSDFAO {
   loadScene({ positions, normals, colors, roughness = null, indices, sdfHalf = null, sdfTex: gpuSdfTex = null, sdfDims, sdfMin, sdfSpan, bvh, contactRange = 0.24, useGI = true }) {
     const d = this.device;
     if (this.sceneRes) {
+      this.rigidMeshes.clear();
+      this.rigidBG = null;
+      this._rigidMotion = false;
       this.sceneRes.vb.destroy();
       this.sceneRes.ib.destroy();
       if (this.sceneRes.ownsSdfTex) this.sceneRes.sdfTex.destroy();
@@ -2124,8 +2265,7 @@ export class WebGPUFastSDFAO {
 
   _rebuildBindGroups() {
     const d = this.device, s = this.sceneRes;
-    this.gBG = d.createBindGroup({ layout: this.gPipe.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: this.camUBuf } }] });
-    this.dynGBG = d.createBindGroup({ layout: this.dynGPipe.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: this.camUBuf } }] });
+    this.gBG = d.createBindGroup({ layout: this._sceneLayouts.raster, entries: [{ binding: 0, resource: { buffer: this.camUBuf } }] });
     this.relightDirectBG = d.createBindGroup({
       layout: this.relightDirectPipe.getBindGroupLayout(0),
       entries: [
@@ -2157,7 +2297,7 @@ export class WebGPUFastSDFAO {
       ],
     });
     const makeTraceBG = (radView, pIdx) => d.createBindGroup({
-      layout: this.tracePipe.getBindGroupLayout(0),
+      layout: this._sceneLayouts.trace,
       entries: [
         { binding: 0, resource: { buffer: this.traceUBuf } },
         { binding: 1, resource: this.gPosDepth[pIdx].createView() },
@@ -2216,7 +2356,7 @@ export class WebGPUFastSDFAO {
     this.denoiseBG3 = [makeDnBG(this.denoiseUBuf3, this.denoiseB, this.denoiseA, 0), makeDnBG(this.denoiseUBuf3, this.denoiseB, this.denoiseA, 1)];
 
     const makeReflTraceBG = (radView, pIdx) => d.createBindGroup({
-      layout: this.reflTracePipe.getBindGroupLayout(0),
+      layout: this._sceneLayouts.reflect,
       entries: [
         { binding: 0, resource: { buffer: this.reflUBuf } },
         { binding: 1, resource: this.gPosDepth[pIdx].createView() },
@@ -2255,8 +2395,8 @@ export class WebGPUFastSDFAO {
     };
     this.reflFiltBG = [makeReflFiltBG(0), makeReflFiltBG(1)];
 
-    const makeCompBG = (pipe, tex, pIdx) => d.createBindGroup({
-      layout: pipe.getBindGroupLayout(0),
+    const makeCompBG = (tex, pIdx) => d.createBindGroup({
+      layout: this._sceneLayouts.composite,
       entries: [
         { binding: 0, resource: { buffer: this.compUBuf } },
         { binding: 1, resource: tex.createView() },
@@ -2270,12 +2410,9 @@ export class WebGPUFastSDFAO {
         { binding: 9, resource: this.linSamp },
       ],
     });
-    this.compBGHist = [makeCompBG(this.compPipe, this.histAOGI[0], 0), makeCompBG(this.compPipe, this.histAOGI[1], 1)];
-    this.compBGD1   = [makeCompBG(this.compPipe, this.denoiseA, 0), makeCompBG(this.compPipe, this.denoiseA, 1)];
-    this.compBGD2   = [makeCompBG(this.compPipe, this.denoiseB, 0), makeCompBG(this.compPipe, this.denoiseB, 1)];
-    this.dynCompBGHist = [makeCompBG(this.dynCompPipe, this.histAOGI[0], 0), makeCompBG(this.dynCompPipe, this.histAOGI[1], 1)];
-    this.dynCompBGD1   = [makeCompBG(this.dynCompPipe, this.denoiseA, 0), makeCompBG(this.dynCompPipe, this.denoiseA, 1)];
-    this.dynCompBGD2   = [makeCompBG(this.dynCompPipe, this.denoiseB, 0), makeCompBG(this.dynCompPipe, this.denoiseB, 1)];
+    this.compBGHist = [makeCompBG(this.histAOGI[0], 0), makeCompBG(this.histAOGI[1], 1)];
+    this.compBGD1   = [makeCompBG(this.denoiseA, 0), makeCompBG(this.denoiseA, 1)];
+    this.compBGD2   = [makeCompBG(this.denoiseB, 0), makeCompBG(this.denoiseB, 1)];
   }
 
   clearHash() {
@@ -2340,6 +2477,8 @@ export class WebGPUFastSDFAO {
   render(eye, target, { fovDeg = 37, up = [0, 0, 1] } = {}) {
     if (!this.sceneRes) return;
     const d = this.device, s = this.sceneRes, q = WEBGPU_QUALITY_PRESETS[this.quality];
+    const pipes = this._prepareRigidMeshes();
+    const hasRigid = this.rigidMeshes.count > 0;
     const view = lookAtMat4(eye, target, up);
     const proj = perspectiveMat4(fovDeg, this.width / this.height, 0.1, 100);
     const vp = mulMat4(proj, view);
@@ -2388,8 +2527,8 @@ export class WebGPUFastSDFAO {
     tf.set([this.emissivePos[0], this.emissivePos[1], this.emissivePos[2], this.emissiveRadius], 36);
     tf.set([this.emissiveCol[0], this.emissiveCol[1], this.emissiveCol[2], q.giMaxDist], 40);
     tf.set([this.aoW, this.aoH, this.frame, 0.0005], 44);
-    tu.set([q.rays, q.maxSamples, this.useGI ? 1 : 0, (this.useHash && !hasDyn && !hasOrb) ? 1 : 0], 48);
-    const extraFlags = (this.reuseEnabled ? 1 : 0) | (traceShadows ? 2 : 0) | (q.multiBounce ? 4 : 0) | (hasDyn ? 8 : 0) | ((effGiSteps & 0xFF) << 8);
+    tu.set([q.rays, q.maxSamples, this.useGI ? 1 : 0, (this.useHash && !hasDyn && !hasOrb && !this._rigidMotion) ? 1 : 0], 48);
+    const extraFlags = (this.reuseEnabled ? 1 : 0) | (traceShadows ? 2 : 0) | (q.multiBounce ? 4 : 0) | (hasDyn ? 8 : 0) | (!this.hasPrev ? 16 : 0) | ((effGiSteps & 0xFF) << 8);
     tu.set([effShadowSteps, HASH_MASK, extraFlags, s.nodeCount], 52);
     tf.set([s.rootMin[0], s.rootMin[1], s.rootMin[2], 0], 56);
     tf.set([s.rootSpan[0], s.rootSpan[1], s.rootSpan[2], 0], 60);
@@ -2464,11 +2603,7 @@ export class WebGPUFastSDFAO {
         depthStencilAttachment: { view: this.fullDepth.createView(), depthClearValue: 1.0, depthLoadOp: 'clear', depthStoreOp: 'store' },
         ...(this.hasTimestamp ? { timestampWrites: { querySet: this.tsQuery, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : {}),
       });
-      fp.setPipeline(this.compPipe);
-      fp.setBindGroup(0, this._lastCompBG);
-      fp.setVertexBuffer(0, s.vb);
-      fp.setIndexBuffer(s.ib, 'uint32');
-      fp.drawIndexed(s.indexCount);
+      this._drawComposite(fp, pipes, this._lastCompBG, dynPR, dynCount);
       if (this.viewMode === 0 && (this.emissiveCol[0] + this.emissiveCol[1] + this.emissiveCol[2]) > 1e-3) {
         const oBuf = new Float32Array(24);
         oBuf.set(vp, 0);
@@ -2515,21 +2650,28 @@ export class WebGPUFastSDFAO {
       depthStencilAttachment: { view: this.gDepth.createView(), depthClearValue: 1.0, depthLoadOp: 'clear', depthStoreOp: 'store' },
       ...(this.hasTimestamp ? { timestampWrites: { querySet: this.tsQuery, beginningOfPassWriteIndex: 0 } } : {}),
     });
-    gp.setPipeline(this.gPipe);
+    gp.setPipeline(this.scenePipes.gbuffer);
     gp.setBindGroup(0, this.gBG);
     gp.setVertexBuffer(0, s.vb);
     gp.setIndexBuffer(s.ib, 'uint32');
     gp.drawIndexed(s.indexCount);
     if (dynCount > 0) {
-      gp.setPipeline(this.dynGPipe);
-      gp.setBindGroup(0, this.dynGBG);
+      gp.setPipeline(this.scenePipes.analyticGBuffer);
+      gp.setBindGroup(0, this.gBG);
       this._drawMovers(gp, dynPR, dynCount);
+    }
+    if (hasRigid) {
+      gp.setPipeline(pipes.rigidGBuffer);
+      gp.setBindGroup(0, this.gBG);
+      gp.setBindGroup(1, this.rigidBG);
+      this.rigidMeshes.draw(gp);
     }
     gp.end();
 
     // Pass 2 & 3: Trace (BVH2 + 2x2 Occlusion-Point Reuse + SHaRC Hash) + Temporal EMA + A-Trous Denoise
     const cp = enc.beginComputePass();
-    cp.setPipeline(this.tracePipe);
+    cp.setPipeline(pipes.trace);
+    if (hasRigid) cp.setBindGroup(1, this.rigidBG);
     cp.setBindGroup(0, (q.multiBounce ? this.traceBG2B : this.traceBG1B)[curIdx]);
     cp.dispatchWorkgroups(Math.ceil(this.aoW / 8), Math.ceil(this.aoH / 8));
 
@@ -2538,7 +2680,8 @@ export class WebGPUFastSDFAO {
     cp.dispatchWorkgroups(Math.ceil(this.aoW / 8), Math.ceil(this.aoH / 8));
 
     if (traceRefl || (this.useGI && !this.useReflections && this.stillFrames < 2)) {
-      cp.setPipeline(this.reflTracePipe);
+      cp.setPipeline(pipes.reflect);
+      if (hasRigid) cp.setBindGroup(1, this.rigidBG);
       cp.setBindGroup(0, (q.multiBounce ? this.reflTraceBG2B : this.reflTraceBG1B)[curIdx]);
       cp.dispatchWorkgroups(Math.ceil(this.aoW / 8), Math.ceil(this.aoH / 8));
       cp.setPipeline(this.reflFiltPipe);
@@ -2547,24 +2690,20 @@ export class WebGPUFastSDFAO {
     }
 
     let compBG = this.compBGHist[curIdx];
-    let dynCompBG = this.dynCompBGHist[curIdx];
     if (this.useGI) {
       cp.setPipeline(this.denoisePipe);
       cp.setBindGroup(0, this.denoiseBG1[curIdx]);
       cp.dispatchWorkgroups(Math.ceil(this.aoW / 8), Math.ceil(this.aoH / 8));
       compBG = this.compBGD1[curIdx];
-      dynCompBG = this.dynCompBGD1[curIdx];
       if (effDenoisePasses >= 2) {
         cp.setBindGroup(0, this.denoiseBG2[curIdx]);
         cp.dispatchWorkgroups(Math.ceil(this.aoW / 8), Math.ceil(this.aoH / 8));
         compBG = this.compBGD2[curIdx];
-        dynCompBG = this.dynCompBGD2[curIdx];
       }
       if (effDenoisePasses >= 3) {
         cp.setBindGroup(0, this.denoiseBG3[curIdx]);
         cp.dispatchWorkgroups(Math.ceil(this.aoW / 8), Math.ceil(this.aoH / 8));
         compBG = this.compBGD1[curIdx];
-        dynCompBG = this.dynCompBGD1[curIdx];
       }
     } else {
       // Single stride-1 plane-aware AO polish dissolves SHaRC cell jitter while preserving sharp contacts
@@ -2572,7 +2711,6 @@ export class WebGPUFastSDFAO {
       cp.setBindGroup(0, this.denoiseBG1[curIdx]);
       cp.dispatchWorkgroups(Math.ceil(this.aoW / 8), Math.ceil(this.aoH / 8));
       compBG = this.compBGD1[curIdx];
-      dynCompBG = this.dynCompBGD1[curIdx];
     }
     cp.end();
 
@@ -2587,17 +2725,8 @@ export class WebGPUFastSDFAO {
       depthStencilAttachment: { view: this.fullDepth.createView(), depthClearValue: 1.0, depthLoadOp: 'clear', depthStoreOp: 'store' },
       ...(this.hasTimestamp ? { timestampWrites: { querySet: this.tsQuery, endOfPassWriteIndex: 1 } } : {}),
     });
-    fp.setPipeline(this.compPipe);
-    fp.setBindGroup(0, compBG);
     this._lastCompBG = compBG;
-    fp.setVertexBuffer(0, s.vb);
-    fp.setIndexBuffer(s.ib, 'uint32');
-    fp.drawIndexed(s.indexCount);
-    if (dynCount > 0) {
-      fp.setPipeline(this.dynCompPipe);
-      fp.setBindGroup(0, dynCompBG);
-      this._drawMovers(fp, dynPR, dynCount);
-    }
+    this._drawComposite(fp, pipes, compBG, dynPR, dynCount);
     if (this.viewMode === 0 && (this.emissiveCol[0] + this.emissiveCol[1] + this.emissiveCol[2]) > 1e-3) {
       const oBuf = new Float32Array(24);
       oBuf.set(vp, 0);

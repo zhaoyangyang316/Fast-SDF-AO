@@ -13,6 +13,7 @@ Exported as `fast-sdf-ao/webgpu` and live at **[webgpu.html](https://wrong-nebul
 - **REBLUR-lite + SIGMA-lite 1-SPP Denoising:** Penumbra-guided bilateral shadow filtering (noise-free soft shadows on frame 1), hit-distance-guided `1→2→4` à-trous GI filtering, firefly suppression, and spatio-temporal triangular-PDF dithering
 - **Full-Resolution Mirror Chrome + GGX Glossy SDF Reflections** (`src/webgpu-refl.js`): Exact `1280 × 720` mirror chrome ray tracing on conductors (`rough ≤ 0.08`) + checkerboard GGX rough reflections with virtual-motion parallax reprojection and roughness edge-stopping
 - **Moving box test scene.** Serve the checkout and open `webgpu.html?scene=moving-box` to see a coral cube slide across the Gallery floor. Toggle **Moving Box** to compare its contact shadow, diffuse bounce, and reflections. The renderer evaluates the box analytically as it moves and keeps the static scene bake.
+- **Rigid triangle meshes.** Open `webgpu.html?scene=rigid-mesh` to see a chair translate and rotate in the Gallery. Choose **Import as moving mesh** to try an opaque OBJ, GLB, or glTF asset in the current scene. Toggle **Rigid mesh** to compare its lighting against the empty floor.
 - **Live Drag-and-Drop `.glb` / `.obj` + In-Browser GPU SDF Baker** (`src/webgpu-bake.js`): Drop any `.glb`, `.gltf`, or `.obj` onto `webgpu.html` to import full **PBR `metalness` & `roughness`** materials and bake an exact `96 × 96 × 56` FP16 SDF directly on the WebGPU GPU (zero CPU readback)
 
 #### 1-Bounce Diffuse GI Head-to-Head (`benchmark/bench_gi_compare.py`, Apple M1, `1280 × 720`, 512-Ray Reference)
@@ -99,6 +100,42 @@ tracedAO.setQuality('medium');
 // In your render loop:
 const { aoTex, normalTex, bentTex } = tracedAO.update();
 ```
+
+### Rigid mesh instances in WebGPU
+
+Register local-space geometry once on an initialized `WebGPUFastSDFAO` renderer. Supply indexed triangles, per-vertex positions, normals and linear RGB colors. The optional per-vertex roughness uses the renderer’s existing convention of negative values for metals. Instances share the asset’s GPU geometry and triangle BVH.
+
+```js
+const rigid = gpu.rigidMeshes;
+const chair = rigid.registerAsset({ positions, normals, colors, roughness, indices });
+const first = rigid.createInstance(chair); // identity transform
+const pose = new THREE.Matrix4().makeRotationZ(Math.PI / 3);
+pose.setPosition(2, -1, 0);
+const second = rigid.createInstance(chair, pose);
+
+// Before rendering the next frame
+pose.setPosition(2.25, -1, 0);
+rigid.setTransform(second, pose);
+
+// When removing the asset
+rigid.removeInstance(first);
+rigid.removeInstance(second);
+rigid.releaseAsset(chair);
+```
+
+Poses are rotations and translations expressed as a Three.js matrix or a column-major 16-number array. Bake fixed scale into the input geometry. Changing a pose refits world-space instance bounds and uploads the changed records. AO, diffuse GI, sun and orb shadows, and glossy and mirror reflections can all hit the transformed triangles, including offscreen props. Offscreen moving hits use their interpolated vertex material and current lights. The coarse multi-bounce radiance volume still represents the static environment. Motion invalidates temporal lighting and suspends spatial hash reuse until geometry settles. Loading a replacement static scene clears its rigid assets and instances.
+
+The demo importer bakes child transforms and fixed scale into a single rigid prop. It shades imported props using vertex colors and material factors. Texture maps, skinning, morph animation and transparency are outside this path. When opening a glTF with external files, select its local dependencies alongside the model.
+
+Run `npm test` for the package and CPU geometry checks. With Python Playwright and Chromium installed, run the GPU comparisons from the checkout:
+
+```sh
+python3 test/webgpu-browser.py test/rigid-queries.mjs
+python3 test/webgpu-browser.py test/rigid-render.mjs
+python3 test/webgpu-browser.py benchmark/rigid-mesh-bench.mjs --scene gallery --width 1280 --height 720
+```
+
+Use `--browser /path/to/chromium` for a system browser or add `--software` for a SwiftShader functional run.
 
 ## Traced SDF (temporal)
 

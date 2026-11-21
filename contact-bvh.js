@@ -654,13 +654,22 @@ const bHiX=new Float32Array(SAH_BINS),bHiY=new Float32Array(SAH_BINS),bHiZ=new F
 const bCnt=new Int32Array(SAH_BINS);
 const rArea=new Float32Array(SAH_BINS),rCnt=new Int32Array(SAH_BINS);
 
-export function buildContactBVH(objects,T,{gridSize=0,range=.25,maxLeaf=7,maxTextureSize=4096,max3DTextureSize=256}={}){
+// Shared SAH builder. The rigid WebGPU path requests a single asset-space tree
+// and its primitive ordering without creating WebGL texture wrappers.
+const identityMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+export function buildLocalTriangleBVH(positions, indices) {
+ return buildTriangleHierarchy([], null, {}, {positions, indices});
+}
+export function buildContactBVH(objects,T,options={}) {
+ return buildTriangleHierarchy(objects,T,options);
+}
+function buildTriangleHierarchy(objects,T,{gridSize=0,range=.25,maxLeaf=7,maxTextureSize=4096,max3DTextureSize=256},local=null){
  const autoGrid=gridSize==='auto';
  if(!Number.isFinite(range)||range<0||(!autoGrid&&(!Number.isFinite(gridSize)||gridSize<0)))throw Error('Invalid contact BVH range/grid size');
  const leafMax=Math.max(1,Math.min(7,maxLeaf|0));
 
  // Pass 1: count triangles so we allocate exact flat typed arrays once.
- let triCount=0;
+ let triCount=local?local.indices.length/3:0;
  for(const object of objects){
   object.updateWorldMatrix(true,false);
   const g=object.geometry,idx=g.index,pos=g.attributes.position;
@@ -676,17 +685,8 @@ export function buildContactBVH(objects,T,{gridSize=0,range=.25,maxLeaf=7,maxTex
  const tCenX=new Float32Array(triCount),tCenY=new Float32Array(triCount),tCenZ=new Float32Array(triCount);
 
  let gLoX=Infinity,gLoY=Infinity,gLoZ=Infinity,gHiX=-Infinity,gHiY=-Infinity,gHiZ=-Infinity;
- const matrix=new T.Matrix4(),instance=new T.Matrix4();
  let ti=0;
- for(const object of objects){
-  const g=object.geometry,pos=g.attributes.position,idx=g.index;
-  const pArr=pos.array,pStride=pos.itemSize,iArr=idx?idx.array:null;
-  const count=idx?idx.count:pos.count;
-  const instCount=object.isInstancedMesh?object.count:1;
-  for(let inst=0;inst<instCount;inst++){
-   matrix.copy(object.matrixWorld);
-   if(object.isInstancedMesh){object.getMatrixAt(inst,instance);matrix.multiply(instance);}
-   const m=matrix.elements;
+ function addGeometry(pArr,pStride,iArr,count,m){
    const m0=m[0],m1=m[1],m2=m[2],m4=m[4],m5=m[5],m6=m[6],m8=m[8],m9=m[9],m10=m[10],m12=m[12],m13=m[13],m14=m[14];
    for(let i=0;i<count;i+=3){
     const a=(iArr?iArr[i]:i)*pStride,b=(iArr?iArr[i+1]:i+1)*pStride,c=(iArr?iArr[i+2]:i+2)*pStride;
@@ -711,6 +711,19 @@ export function buildContactBVH(objects,T,{gridSize=0,range=.25,maxLeaf=7,maxTex
     if(lx<gLoX)gLoX=lx;if(ly<gLoY)gLoY=ly;if(lz<gLoZ)gLoZ=lz;
     if(hx>gHiX)gHiX=hx;if(hy>gHiY)gHiY=hy;if(hz>gHiZ)gHiZ=hz;
     ti++;
+   }
+ }
+ if(local){
+  addGeometry(local.positions,3,local.indices,local.indices.length,identityMatrix);
+ }else{
+  const matrix=new T.Matrix4(),instance=new T.Matrix4();
+  for(const object of objects){
+   const g=object.geometry,pos=g.attributes.position,idx=g.index;
+   const count=idx?idx.count:pos.count;
+   for(let inst=0;inst<(object.isInstancedMesh?object.count:1);inst++){
+    matrix.copy(object.matrixWorld);
+    if(object.isInstancedMesh){object.getMatrixAt(inst,instance);matrix.multiply(instance);}
+    addGeometry(pos.array,pos.itemSize,idx?idx.array:null,count,matrix.elements);
    }
   }
  }
@@ -987,6 +1000,8 @@ export function buildContactBVH(objects,T,{gridSize=0,range=.25,maxLeaf=7,maxTex
  }
 
  if(ordLen*8>=0x7FFFFFFF)throw Error('BVH triangle addressing exceeds 28-bit leaf range');
+ if(local) return {nodes:nodeData.subarray(0,nodeLen*4),order:ordIdx.subarray(0,ordLen)};
+
 
  // Pack RGBA32UI node texture with fixed power-of-2 width (1024) for zero-div bit-shift addressing.
  const TEX_W=1024;
