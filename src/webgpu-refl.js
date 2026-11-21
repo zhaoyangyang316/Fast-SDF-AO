@@ -3,7 +3,9 @@
 // - Hybrid trace: Storage-buffer Dual-Child SAH BVH2 (near contact) -> FP16 SDF (far) -> radVol + direct Emissive Orb hit
 // - Temporal reprojection EMA + roughness-guided 3x3 bilateral spatial filter
 
+import { DYNAMIC_SHAPES_WGSL } from './webgpu-dynamic.js';
 export const REFL_TRACE_WGSL = /* wgsl */`
+${DYNAMIC_SHAPES_WGSL}
 struct ReflU {
   curViewProj: mat4x4<f32>,
   sdfMin: vec4<f32>,
@@ -71,8 +73,8 @@ fn sampleSDF(p: vec3<f32>) -> f32 {
   if ((u.extra.z & 4u) != 0u) {
     for (var i = 0u; i < 4u; i++) {
       let pr = u.dynPosRad[i];
-      if (pr.w > 0.0) {
-        d = min(d, length(p - pr.xyz) - pr.w);
+      if (pr.w != 0.0) {
+        d = min(d, moverDistance(p, pr));
       }
     }
   }
@@ -92,8 +94,8 @@ fn evalHitRadiance(hitP: vec3<f32>, rayDir: vec3<f32>) -> vec3<f32> {
   if ((u.extra.z & 4u) != 0u) {
     for (var i = 0u; i < 4u; i++) {
       let pr = u.dynPosRad[i];
-      if (pr.w > 0.0 && abs(length(hitP - pr.xyz) - pr.w) < 0.06) {
-        let hn = normalize(hitP - pr.xyz);
+      if (pr.w != 0.0 && abs(moverDistance(hitP, pr)) < 0.06) {
+        let hn = moverNormal(hitP, pr);
         let sDir = normalize(u.sunDir.xyz);
         let sun = max(0.0, dot(hn, sDir));
         let skyT = clamp(hn.z * 0.5 + 0.5, 0.0, 1.0);
@@ -307,8 +309,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   }
 
   // 1) Fast 1-Lipschitz midpoint empty-ball skip before BVH2 (disabled on Low/Very Low tiers)
-  var hitBvh = false;
-  var tBvh = cRange;
+  var nearHit = false;
+  var nearHitT = cRange;
   let useBvh = (u.extra.z & 2u) != 0u;
   if (useBvh) {
     let dMid = sampleSDF(origin + R * (0.5 * cRange));
@@ -332,17 +334,27 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       } else {
         cellCnt = u.extra.x;
       }
-      hitBvh = bvhContactHit(origin, R, cellRoot, cellCnt, cellQMin, cellQScale, &tBvh);
+      nearHit = bvhContactHit(origin, R, cellRoot, cellCnt, cellQMin, cellQScale, &nearHitT);
     }
   }
 
-  if (hitBvh && tBvh < orbT) {
+  let marchStart = select(0.06, cRange, useBvh);
+  if ((u.extra.z & 4u) != 0u) {
+    let limit = min(nearHitT, marchStart);
+    let contact = closestMoverContact(origin, R, limit);
+    if (contact.w < limit) {
+      nearHit = true;
+      nearHitT = contact.w;
+    }
+  }
+
+  if (nearHit && nearHitT < orbT) {
     hitAny = true;
-    hitDist = tBvh;
-    rad = evalHitRadiance(origin + R * tBvh, R);
+    hitDist = nearHitT;
+    rad = evalHitRadiance(origin + R * nearHitT, R);
   } else {
     // 2) Relaxed far SDF sphere trace + 1-step hit refinement (tier-controlled step budget)
-    var s = select(0.06, cRange, useBvh);
+    var s = marchStart;
     let maxSteps = max(u.extra.w, 12u);
     for (var k = 0u; k < maxSteps; k++) {
       if (s >= orbT) { break; }
@@ -350,7 +362,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       if (d > 100.0) { break; }
       if (d < 0.025) {
         // Refine hit point onto exact surface
-        let sRef = max(cRange, s + d * 0.5);
+        let sRef = max(marchStart, s + d * 0.5);
         hitAny = true;
         hitDist = sRef;
         rad = evalHitRadiance(origin + R * sRef, R);

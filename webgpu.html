@@ -56,7 +56,7 @@ canvas{display:block;width:100%;height:auto}
     <label><input id="hash" type="checkbox" checked> SHaRC Hash</label>
     <label><input id="reuse" type="checkbox" checked> 2×2 Reuse</label>
     <label><input id="emissive" type="checkbox"> Emissive Orb</label>
-    <label><input id="movers" type="checkbox"> Moving Objects</label>
+    <label><input id="movers" type="checkbox"> Moving Box</label>
     <label>Sun <input id="sun" type="range" min="-65" max="65" value="22" step="1" style="width:90px"><span id="sun-val" style="min-width:32px">22°</span></label>
     <button id="clear">Clear Cache</button>
   </nav>
@@ -151,6 +151,15 @@ try {
   controls.maxDistance = 45;
 
   const sceneCache = {};
+  // Start each path on open floor in the scene's own coordinate system.
+  const boxPathCenters = {
+    gallery: [0, -1.55, 0.025],
+    atrium: [0, -2.95, 0],
+    archive: [12, 6.5, 0],
+    custom: [0, -2.65, 0],
+  };
+  const boxTestScene = new URLSearchParams(location.search).get('scene') === 'moving-box';
+  const moversInput = document.querySelector('#movers');
   let activeScene = 'gallery';
   let emissiveOn = false;
   let moversOn = false;
@@ -159,13 +168,18 @@ try {
 
   function updateMovers(t) {
     if (!moversOn) { gpu.dynObjects = []; return; }
-    const a1 = t * 1.05;
-    const a2 = a1 + Math.PI;
-    gpu.dynObjects = [
-      // Collision-free elevated orbit around the central pedestal: polished mirror-gold sphere + coral matte sphere
-      { pos: [1.82 * Math.cos(a1), -0.15 + 1.38 * Math.sin(a1), 1.18 + 0.30 * Math.sin(a1 * 2.0)], radius: 0.33, color: [0.98, 0.80, 0.36], roughness: -0.04 },
-      { pos: [1.78 * Math.cos(a2), -0.15 + 1.34 * Math.sin(a2), 1.02 + 0.24 * Math.cos(a2 * 2.0)], radius: 0.28, color: [0.95, 0.30, 0.18], roughness: 0.65 },
-    ];
+    const halfSize = 0.32;
+    const [x, y, floorZ] = boxPathCenters[activeScene] ?? boxPathCenters.archive;
+    const pos = [x + 1.55 * Math.sin(0.85 * t), y, floorZ + halfSize];
+    gpu.dynObjects = [{ pos, halfSize, color: [0.95, 0.30, 0.18], roughness: 0.65 }];
+  }
+
+  function setMovers(on, t = 0.6) {
+    const enabled = Boolean(on);
+    if (moversOn !== enabled) gpu.clearHash();
+    moversOn = enabled;
+    moversInput.checked = enabled;
+    updateMovers(t);
   }
 
   async function loadSceneData(name) {
@@ -241,8 +255,11 @@ try {
     gpu.sunDir = name === 'archive' ? [-0.33, -0.45, 0.83] : sunDirFromDeg(sunDeg);
     gpu.emissiveCol = (emissiveOn && name === 'gallery') ? [3.6, 2.0, 0.6] : [0, 0, 0];
     gpu.loadScene(sc);
-    camera.position.set(...sc.cam.position);
-    controls.target.set(...sc.cam.target);
+    const cam = boxTestScene && name === 'gallery'
+      ? { position: [2.4, -6.2, 2.35], target: [0, -0.6, 0.65] }
+      : sc.cam;
+    camera.position.set(...cam.position);
+    controls.target.set(...cam.target);
     controls.update();
     const info = gpu.adapterInfo;
     const devLabel = info.description || info.architecture || info.vendor || 'WebGPU';
@@ -263,10 +280,7 @@ try {
     gpu.emissiveCol = (emissiveOn && activeScene === 'gallery') ? [3.6, 2.0, 0.6] : [0, 0, 0];
     gpu.relight(true);
   };
-  document.querySelector('#movers').onchange = e => {
-    moversOn = e.target.checked;
-    updateMovers(simTime);
-  };
+  moversInput.onchange = () => setMovers(moversInput.checked, simTime);
   document.querySelector('#sun').oninput = e => {
     sunDeg = Number(e.target.value);
     document.querySelector('#sun-val').textContent = `${sunDeg}°`;
@@ -407,6 +421,7 @@ try {
   viewEl.addEventListener('drop', e => { e.preventDefault(); viewEl.classList.remove('dragover'); if (e.dataTransfer?.files?.[0]) handleFile(e.dataTransfer.files[0]); });
 
   await selectScene('gallery');
+  setMovers(boxTestScene, simTime);
 
   let running = true, fCount = 0, fStart = performance.now();
   function renderOnce() {
@@ -446,11 +461,7 @@ try {
       return loadCustomThreeObject(obj, name);
     },
     loadCustomThreeObject,
-    setMovers: (on, t = 0.6) => {
-      moversOn = !!on;
-      document.querySelector('#movers').checked = moversOn;
-      updateMovers(t);
-    },
+    setMovers,
     stopLoop: () => { running = false; },
     setSun: (deg) => { sunDeg = deg; gpu.sunDir = sunDirFromDeg(deg); gpu.relight(true); },
     setEmissive: (on, t = 0.7) => {

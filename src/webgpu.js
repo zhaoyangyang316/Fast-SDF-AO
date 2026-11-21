@@ -6,6 +6,7 @@
 // - Real-Time Glossy / Rough SDF Specular Reflections (GGX BVH2 -> SDF -> radVol + direct Emissive Orb hit)
 // - Live In-Browser WebGPU Compute Exact-BVH SDF Baker (pack2x16float -> r16float 3D texture)
 
+import { DYNAMIC_SHAPES_WGSL } from './webgpu-dynamic.js';
 import { bakeSDFOnGPU } from './webgpu-bake.js';
 import { REFL_TRACE_WGSL, REFL_FILTER_WGSL } from './webgpu-refl.js';
 
@@ -41,6 +42,7 @@ struct VIn {
 };
 struct DynVIn {
   @location(0) pos: vec3<f32>,
+  @location(1) nor: vec3<f32>,
 };
 struct VOut {
   @builtin(position) clip: vec4<f32>,
@@ -63,11 +65,11 @@ struct VOut {
   var o: VOut;
   let pr = cam.dynPosRad[inst];
   let cr = cam.dynColRough[inst];
-  let wpos = pr.xyz + v.pos * pr.w;
+  let wpos = pr.xyz + v.pos * abs(pr.w);
   let wp = vec4<f32>(wpos, 1.0);
   o.clip = cam.viewProj * wp;
   o.wPos = wpos;
-  o.wNor = normalize(v.pos);
+  o.wNor = v.nor;
   o.colRough = cr;
   o.viewZ = -(cam.view * wp).z;
   return o;
@@ -332,6 +334,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 `;
 
 const TRACE_WGSL = /* wgsl */`
+${DYNAMIC_SHAPES_WGSL}
 struct TraceU {
   viewProj: mat4x4<f32>,
   sdfMin: vec4<f32>,
@@ -435,30 +438,26 @@ fn sampleSDF(p: vec3<f32>) -> f32 {
   if ((u.extra.z & 8u) != 0u) {
     for (var i = 0u; i < 4u; i++) {
       let pr = u.dynPosRad[i];
-      if (pr.w > 0.0) {
-        d = min(d, length(p - pr.xyz) - pr.w);
+      if (pr.w != 0.0) {
+        d = min(d, moverDistance(p, pr));
       }
     }
   }
   return d;
 }
 
-fn evalDynSphereRad(p: vec3<f32>) -> vec4<f32> {
+fn evalMoverRadiance(p: vec3<f32>) -> vec4<f32> {
   if ((u.extra.z & 8u) == 0u) { return vec4<f32>(0.0); }
   for (var i = 0u; i < 4u; i++) {
     let pr = u.dynPosRad[i];
-    if (pr.w > 0.0) {
-      let rel = p - pr.xyz;
-      let dist = length(rel);
-      if (abs(dist - pr.w) < 0.07) {
-        let hn = rel / max(dist, 1e-4);
-        let alb = u.dynColRough[i].rgb;
-        let sDir = normalize(u.sunDirScale.xyz);
-        let ndl = max(0.0, dot(hn, sDir));
-        let skyF = 0.42 + 0.32 * max(0.0, hn.z);
-        var rad = alb * (vec3<f32>(3.10, 2.90, 2.55) * ndl + vec3<f32>(0.56, 0.64, 0.76) * skyF);
-        return vec4<f32>(rad, 1.0);
-      }
+    if (pr.w != 0.0 && abs(moverDistance(p, pr)) < 0.07) {
+      let hn = moverNormal(p, pr);
+      let alb = u.dynColRough[i].rgb;
+      let sDir = normalize(u.sunDirScale.xyz);
+      let ndl = max(0.0, dot(hn, sDir));
+      let skyF = 0.42 + 0.32 * max(0.0, hn.z);
+      let rad = alb * (vec3<f32>(3.10, 2.90, 2.55) * ndl + vec3<f32>(0.56, 0.64, 0.76) * skyF);
+      return vec4<f32>(rad, 1.0);
     }
   }
   return vec4<f32>(0.0);
@@ -475,7 +474,7 @@ fn sampleRad(p: vec3<f32>) -> vec3<f32> {
 // sun shadow & emissive orb radiance (zero 11cm voxel light leak!), falling back seamlessly to
 // 360-deg world-space radVol for off-screen, back-facing, or occluded hits!
 fn evalGIHitRadiance(hitP: vec3<f32>, rayDir: vec3<f32>) -> vec3<f32> {
-  let dynR = evalDynSphereRad(hitP);
+  let dynR = evalMoverRadiance(hitP);
   if (dynR.a > 0.5) { return dynR.rgb; }
   let clip = u.viewProj * vec4<f32>(hitP, 1.0);
   if (clip.w > 0.1 && u.params.z > 0.5) {
@@ -841,6 +840,15 @@ fn main(
       var blocked = false;
       if (cosn < minCosClear) {
         blocked = bvhContactHit(origin, w, cellRoot, cellCnt, cellQMin, cellQScale, &tHit, &hitN);
+      }
+
+      if ((u.extra.z & 8u) != 0u) {
+        let contact = closestMoverContact(origin, w, tHit);
+        if (contact.w < tHit) {
+          blocked = true;
+          tHit = contact.w;
+          hitN = contact.xyz;
+        }
       }
 
       var v = 1.0;
@@ -1253,6 +1261,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 `;
 
 const COMPOSITE_WGSL = /* wgsl */`
+${DYNAMIC_SHAPES_WGSL}
 struct CompU {
   viewProj: mat4x4<f32>,
   eye: vec4<f32>,
@@ -1283,6 +1292,7 @@ struct VIn {
 };
 struct DynVIn {
   @location(0) pos: vec3<f32>,
+  @location(1) nor: vec3<f32>,
 };
 struct VOut {
   @builtin(position) clip: vec4<f32>,
@@ -1302,10 +1312,10 @@ struct VOut {
   var o: VOut;
   let pr = u.dynPosRad[inst];
   let cr = u.dynColRough[inst];
-  let wpos = pr.xyz + v.pos * pr.w;
+  let wpos = pr.xyz + v.pos * abs(pr.w);
   o.clip = u.viewProj * vec4<f32>(wpos, 1.0);
   o.wPos = wpos;
-  o.wNor = normalize(v.pos);
+  o.wNor = v.nor;
   o.colRough = cr;
   return o;
 }
@@ -1337,11 +1347,11 @@ fn compSampleSDF(p: vec3<f32>) -> f32 {
   if (all(uv >= vec3<f32>(0.0)) && all(uv <= vec3<f32>(1.0))) {
     d = textureSampleLevel(sdfTex, linSamp, uv, 0.0).r;
   }
-  if (u.dynPosRad[0].w > 0.0) {
+  if (u.dynPosRad[0].w != 0.0) {
     for (var i = 0u; i < 4u; i++) {
       let pr = u.dynPosRad[i];
-      if (pr.w > 0.0) {
-        d = min(d, length(p - pr.xyz) - pr.w);
+      if (pr.w != 0.0) {
+        d = min(d, moverDistance(p, pr));
       }
     }
   }
@@ -1373,8 +1383,15 @@ fn traceMirrorFullRes(p: vec3<f32>, n: vec3<f32>, V: vec3<f32>) -> vec3<f32> {
     }
   }
   var s = 0.04;
+  if (u.dynPosRad[0].w != 0.0) {
+    let contact = closestMoverContact(ro, R, s);
+    if (contact.w < s) {
+      hitAny = true;
+      hitDist = contact.w;
+    }
+  }
   for (var k = 0u; k < 44u; k++) {
-    if (s >= orbT) { break; }
+    if (hitAny || s >= orbT) { break; }
     let d = compSampleSDF(ro + R * s);
     if (d > 100.0) { break; }
     let hitEps = select(0.015, 0.004, k < 2u);
@@ -1397,11 +1414,11 @@ fn traceMirrorFullRes(p: vec3<f32>, n: vec3<f32>, V: vec3<f32>) -> vec3<f32> {
     return mix(vec3<f32>(0.22, 0.24, 0.28), vec3<f32>(0.62, 0.72, 0.88), skyT) + sunDisc + keyBox + rimBox + softBox;
   }
   let hitP = ro + R * hitDist;
-  if (u.dynPosRad[0].w > 0.0) {
+  if (u.dynPosRad[0].w != 0.0) {
     for (var i = 0u; i < 4u; i++) {
       let pr = u.dynPosRad[i];
-      if (pr.w > 0.0 && abs(length(hitP - pr.xyz) - pr.w) < 0.05) {
-        let hn = normalize(hitP - pr.xyz);
+      if (pr.w != 0.0 && abs(moverDistance(hitP, pr)) < 0.05) {
+        let hn = moverNormal(hitP, pr);
         let sDir = normalize(u.sunDir.xyz);
         let sun = max(0.0, dot(hn, sDir));
         let skyT = clamp(hn.z * 0.5 + 0.5, 0.0, 1.0);
@@ -1600,14 +1617,15 @@ struct VOut {
 }
 `;
 
-function makeUnitSphereMesh(uSegs = 20, vSegs = 14) {
-  const pos = [], idx = [];
+function makeMoverGeometry(uSegs = 20, vSegs = 14) {
+  const vertices = [], idx = [];
   for (let j = 0; j <= vSegs; j++) {
     const phi = (j / vSegs) * Math.PI;
     const sp = Math.sin(phi), cp = Math.cos(phi);
     for (let i = 0; i <= uSegs; i++) {
       const th = (i / uSegs) * Math.PI * 2;
-      pos.push(sp * Math.cos(th), sp * Math.sin(th), cp);
+      const x = sp * Math.cos(th), y = sp * Math.sin(th);
+      vertices.push(x, y, cp, x, y, cp);
     }
   }
   const stride = uSegs + 1;
@@ -1618,7 +1636,23 @@ function makeUnitSphereMesh(uSegs = 20, vSegs = 14) {
       if (j < vSegs - 1) idx.push(b, c, d);
     }
   }
-  return { pos: new Float32Array(pos), idx: new Uint32Array(idx) };
+  const sphereIndexCount = idx.length;
+  // Each cube face owns its vertices so its flat normal survives interpolation.
+  for (let axis = 0; axis < 3; axis++) {
+    for (const sign of [-1, 1]) {
+      const normal = [0, 0, 0];
+      normal[axis] = sign;
+      const base = vertices.length / 6;
+      for (const [u, v] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+        const corner = normal.slice();
+        corner[(axis + 1) % 3] = sign * u;
+        corner[(axis + 2) % 3] = v;
+        vertices.push(...corner, ...normal);
+      }
+      idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+    }
+  }
+  return { vertices: new Float32Array(vertices), indices: new Uint32Array(idx), sphereIndexCount };
 }
 
 // Minimal CPU triangle splatting into 64x64x40 albedo + normal (with 1-voxel dilation offset code in normal.a)
@@ -1827,7 +1861,13 @@ export class WebGPUFastSDFAO {
     };
 
     const gMod = d.createShaderModule({ code: GBUFFER_WGSL });
-    const dynVLayout = { arrayStride: 12, attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }] };
+    const dynVLayout = {
+      arrayStride: 24,
+      attributes: [
+        { shaderLocation: 0, offset: 0, format: 'float32x3' },
+        { shaderLocation: 1, offset: 12, format: 'float32x3' },
+      ],
+    };
     this.gPipe = d.createRenderPipeline({
       layout: 'auto',
       vertex: { module: gMod, entryPoint: 'vs', buffers: [vLayout] },
@@ -1892,21 +1932,36 @@ export class WebGPUFastSDFAO {
     const orbMod = d.createShaderModule({ code: ORB_WGSL });
     this.orbPipe = d.createRenderPipeline({
       layout: 'auto',
-      vertex: { module: orbMod, entryPoint: 'vs', buffers: [{ arrayStride: 12, attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }] }] },
+      vertex: { module: orbMod, entryPoint: 'vs', buffers: [dynVLayout] },
       fragment: { module: orbMod, entryPoint: 'fs', targets: [{ format: this.format }] },
       primitive: { topology: 'triangle-list', cullMode: 'back' },
       depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
     });
-    const sph = makeUnitSphereMesh(20, 14);
-    this.orbVB = d.createBuffer({ size: sph.pos.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
-    d.queue.writeBuffer(this.orbVB, 0, sph.pos);
-    this.orbIB = d.createBuffer({ size: sph.idx.byteLength, usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST });
-    d.queue.writeBuffer(this.orbIB, 0, sph.idx);
-    this.orbIdxCount = sph.idx.length;
+    const { vertices, indices, sphereIndexCount } = makeMoverGeometry();
+    this.moverVB = d.createBuffer({ size: vertices.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
+    d.queue.writeBuffer(this.moverVB, 0, vertices);
+    this.moverIB = d.createBuffer({ size: indices.byteLength, usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST });
+    d.queue.writeBuffer(this.moverIB, 0, indices);
+    this.sphereIndexCount = sphereIndexCount;
+    this.cubeIndexCount = indices.length - sphereIndexCount;
     this.orbUBuf = d.createBuffer({ size: 96, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     this.orbBG = d.createBindGroup({ layout: this.orbPipe.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: this.orbUBuf } }] });
 
     this.linSamp = d.createSampler({ magFilter: 'linear', minFilter: 'linear', addressModeU: 'clamp-to-edge', addressModeV: 'clamp-to-edge', addressModeW: 'clamp-to-edge' });
+  }
+
+  _drawMovers(pass, dynPR, count) {
+    pass.setVertexBuffer(0, this.moverVB);
+    pass.setIndexBuffer(this.moverIB, 'uint32');
+    // firstInstance keeps the shader's uniform index aligned with each mover.
+    for (let first = 0; first < count;) {
+      const shape = Math.sign(dynPR[first * 4 + 3]);
+      let end = first + 1;
+      while (end < count && Math.sign(dynPR[end * 4 + 3]) === shape) end++;
+      if (shape > 0) pass.drawIndexed(this.sphereIndexCount, end - first, 0, 0, first);
+      if (shape < 0) pass.drawIndexed(this.cubeIndexCount, end - first, this.sphereIndexCount, 0, first);
+      first = end;
+    }
   }
 
   _initSharedTargets() {
@@ -2301,7 +2356,9 @@ export class WebGPUFastSDFAO {
     const dynCR = new Float32Array(16);
     for (let i = 0; i < dynCount; i++) {
       const o = this.dynObjects[i];
-      dynPR.set([o.pos[0], o.pos[1], o.pos[2], o.radius], i * 4);
+      // Positive extent for spheres, negative for axis-aligned cubes, zero for unused slots.
+      const extent = o.halfSize === undefined ? Math.max(0, o.radius) : -Math.max(0, o.halfSize);
+      dynPR.set([o.pos[0], o.pos[1], o.pos[2], extent], i * 4);
       dynCR.set([o.color[0], o.color[1], o.color[2], o.roughness], i * 4);
     }
 
@@ -2420,9 +2477,9 @@ export class WebGPUFastSDFAO {
         d.queue.writeBuffer(this.orbUBuf, 0, oBuf);
         fp.setPipeline(this.orbPipe);
         fp.setBindGroup(0, this.orbBG);
-        fp.setVertexBuffer(0, this.orbVB);
-        fp.setIndexBuffer(this.orbIB, 'uint32');
-        fp.drawIndexed(this.orbIdxCount);
+        fp.setVertexBuffer(0, this.moverVB);
+        fp.setIndexBuffer(this.moverIB, 'uint32');
+        fp.drawIndexed(this.sphereIndexCount);
       }
       fp.end();
       if (this.hasTimestamp && !this._tsMapped) {
@@ -2466,9 +2523,7 @@ export class WebGPUFastSDFAO {
     if (dynCount > 0) {
       gp.setPipeline(this.dynGPipe);
       gp.setBindGroup(0, this.dynGBG);
-      gp.setVertexBuffer(0, this.orbVB);
-      gp.setIndexBuffer(this.orbIB, 'uint32');
-      gp.drawIndexed(this.orbIdxCount, dynCount);
+      this._drawMovers(gp, dynPR, dynCount);
     }
     gp.end();
 
@@ -2541,9 +2596,7 @@ export class WebGPUFastSDFAO {
     if (dynCount > 0) {
       fp.setPipeline(this.dynCompPipe);
       fp.setBindGroup(0, dynCompBG);
-      fp.setVertexBuffer(0, this.orbVB);
-      fp.setIndexBuffer(this.orbIB, 'uint32');
-      fp.drawIndexed(this.orbIdxCount, dynCount);
+      this._drawMovers(fp, dynPR, dynCount);
     }
     if (this.viewMode === 0 && (this.emissiveCol[0] + this.emissiveCol[1] + this.emissiveCol[2]) > 1e-3) {
       const oBuf = new Float32Array(24);
@@ -2553,9 +2606,9 @@ export class WebGPUFastSDFAO {
       d.queue.writeBuffer(this.orbUBuf, 0, oBuf);
       fp.setPipeline(this.orbPipe);
       fp.setBindGroup(0, this.orbBG);
-      fp.setVertexBuffer(0, this.orbVB);
-      fp.setIndexBuffer(this.orbIB, 'uint32');
-      fp.drawIndexed(this.orbIdxCount);
+      fp.setVertexBuffer(0, this.moverVB);
+      fp.setIndexBuffer(this.moverIB, 'uint32');
+      fp.drawIndexed(this.sphereIndexCount);
     }
     fp.end();
 

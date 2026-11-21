@@ -2,7 +2,7 @@
 
 Real-time **multi-bounce Global Illumination (GI)**, **Ambient Occlusion (AO)**, **soft area shadows**, **dynamic moving objects**, and **full-resolution mirror & rough glossy SDF reflections** for Three.js — running natively in **WebGPU Compute** and **WebGL2** with **zero hardware ray tracing, zero lightmaps, and zero probe grids**.
 
-**[Live WebGPU Compute Demo](https://wrong-nebula.github.io/Fast-SDF-AO/webgpu.html)** · **[Live WebGL2 Demo](https://wrong-nebula.github.io/Fast-SDF-AO/)** · Switch between **Gallery (GI + Chrome Reflections)**, **Atrium (Curved Meshes)**, and **Archive (Boxes)**, choose from **6 WebGPU Quality Tiers** (`Very Low` → `Ultra`), toggle **Reflections**, **Emissive Orb**, **Moving Objects**, **SHaRC Hash**, **GI Bounce Only**, or **AO Mask**, drag the **Sun** slider in real time, or **drag & drop any `.glb` / `.obj`** to bake an exact FP16 SDF on the GPU.
+**[Live WebGPU Compute Demo](https://wrong-nebula.github.io/Fast-SDF-AO/webgpu.html)** · **[Live WebGL2 Demo](https://wrong-nebula.github.io/Fast-SDF-AO/)** · Switch between **Gallery (GI + Chrome Reflections)**, **Atrium (Curved Meshes)**, and **Archive (Boxes)**, choose from **6 WebGPU Quality Tiers** (`Very Low` → `Ultra`), toggle **Reflections**, **Emissive Orb**, **Moving Box**, **SHaRC Hash**, **GI Bounce Only**, or **AO Mask**, drag the **Sun** slider in real time, or **drag & drop any `.glb` / `.obj`** to bake an exact FP16 SDF on the GPU.
 
 ### Unified WebGPU Compute Backend (`src/webgpu.js`, `src/webgpu-refl.js`, `src/webgpu-bake.js`, `webgpu.html`)
 
@@ -12,7 +12,7 @@ Exported as `fast-sdf-ao/webgpu` and live at **[webgpu.html](https://wrong-nebul
 - **SHaRC World-Space Hash Cache + 4-Neighbor ReSTIR-GI:** `262,144`-slot atomic world-space hash cache (AO + multi-bounce GI, **100% converged-cell skip** on camera cuts) + `8×8` workgroup shared-memory **4-neighbor ReSTIR-GI** spatial reservoir reuse with midpoint SDF visibility validation
 - **REBLUR-lite + SIGMA-lite 1-SPP Denoising:** Penumbra-guided bilateral shadow filtering (noise-free soft shadows on frame 1), hit-distance-guided `1→2→4` à-trous GI filtering, firefly suppression, and spatio-temporal triangular-PDF dithering
 - **Full-Resolution Mirror Chrome + GGX Glossy SDF Reflections** (`src/webgpu-refl.js`): Exact `1280 × 720` mirror chrome ray tracing on conductors (`rough ≤ 0.08`) + checkerboard GGX rough reflections with virtual-motion parallax reprojection and roughness edge-stopping
-- **Real-Time Dynamic Moving Objects:** Analytic dynamic spheres rendered directly into the G-buffer & Composite passes and evaluated in the SDF — casting real-time soft shadows, contact AO, colored GI bounce, and live reflections with **zero SDF re-baking**
+- **Moving box test scene.** Serve the checkout and open `webgpu.html?scene=moving-box` to see a coral cube slide across the Gallery floor. Toggle **Moving Box** to compare its contact shadow, diffuse bounce, and reflections. The renderer evaluates the box analytically as it moves and keeps the static scene bake.
 - **Live Drag-and-Drop `.glb` / `.obj` + In-Browser GPU SDF Baker** (`src/webgpu-bake.js`): Drop any `.glb`, `.gltf`, or `.obj` onto `webgpu.html` to import full **PBR `metalness` & `roughness`** materials and bake an exact `96 × 96 × 56` FP16 SDF directly on the WebGPU GPU (zero CPU readback)
 
 #### 1-Bounce Diffuse GI Head-to-Head (`benchmark/bench_gi_compare.py`, Apple M1, `1280 × 720`, 512-Ray Reference)
