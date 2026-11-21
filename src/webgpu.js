@@ -82,14 +82,17 @@ struct GOut {
   @location(1) normal: vec4<f32>,
   @location(2) albedo: vec4<f32>,
 };
-@fragment fn fs(i: VOut) -> GOut {
+fn writeGBuffer(i: VOut, surfaceTag: f32) -> GOut {
   var o: GOut;
   o.posDepth = vec4<f32>(i.wPos, i.viewZ);
   let isMetal = select(0.0, 1.0, i.colRough.a < 0.0);
-  o.normal = vec4<f32>(normalize(i.wNor), 1.0 + isMetal);
+  o.normal = vec4<f32>(normalize(i.wNor), surfaceTag + isMetal);
   o.albedo = vec4<f32>(i.colRough.rgb, abs(i.colRough.a));
   return o;
 }
+@fragment fn fs(i: VOut) -> GOut { return writeGBuffer(i, 1.0); }
+// Preserve the existing metal threshold and distinguish coplanar rigid/static receivers.
+@fragment fn fsRigid(i: VOut) -> GOut { return writeGBuffer(i, 1.25); }
 `;
 
 const RELIGHT_WGSL = /* wgsl */`
@@ -481,8 +484,11 @@ fn evalGIHitRadiance(hitP: vec3<f32>, rayDir: vec3<f32>) -> vec3<f32> {
   let dynR = evalMoverRadiance(hitP);
   if (dynR.a > 0.5) { return dynR.rgb; }
   let clip = u.viewProj * vec4<f32>(hitP, 1.0);
-  let historyValid = (u.extra.z & 16u) == 0u && u.params.z > 0.5;
-  if (clip.w > 0.1${rigid ? '' : ' && historyValid'}) {
+  let rigidChanged = (u.extra.z & 32u) != 0u;
+  let historyValid = !rigidChanged && (u.extra.z & 16u) == 0u && u.params.z > 0.5;
+  // The static variant draws the room immediately after the last rigid instance
+  // disappears. Evaluate visible bounce lighting with current shadows there too.
+  if (clip.w > 0.1${rigid ? '' : ' && (historyValid || rigidChanged)'}) {
     let ndc = clip.xy / clip.w;
     if (abs(ndc.x) < 0.99 && abs(ndc.y) < 0.99) {
       let uv = vec2<f32>(ndc.x * 0.5 + 0.5, 0.5 - ndc.y * 0.5);
@@ -494,7 +500,7 @@ fn evalGIHitRadiance(hitP: vec3<f32>, rayDir: vec3<f32>) -> vec3<f32> {
         if (dot(hn, -rayDir) > 0.02) {
           let halb = textureLoad(gAlbedoRough, iq, 0).rgb;
           let sDir = normalize(u.sunDirScale.xyz);
-          ${rigid ? `var mt = vec2<f32>(1.0);
+          var mt = vec2<f32>(1.0);
           if (historyValid) {
             mt = textureLoad(prevHistMeta, iq, 0).xy;
           } else {
@@ -504,7 +510,7 @@ fn evalGIHitRadiance(hitP: vec3<f32>, rayDir: vec3<f32>) -> vec3<f32> {
             if (dot(u.emissiveCol.rgb, u.emissiveCol.rgb) > 1e-4) {
               mt.y = sdfPointShadow(gpd.xyz, hn, u.emissivePos.xyz, u.emissivePos.w, hitPixel, u32(u.params.z));
             }
-          }` : 'let mt = textureLoad(prevHistMeta, iq, 0);'}
+          }
           let ndl = max(0.0, dot(hn, sDir));
           let sunSh = clamp(mt.x, 0.0, 1.0);
           let skyF = 0.42 + 0.32 * max(0.0, hn.z);
@@ -1090,7 +1096,7 @@ const TRACE_WGSL = traceWGSL(false);
 const TEMPORAL_WGSL = /* wgsl */`
 struct TempU {
   prevViewProj: mat4x4<f32>,
-  params: vec4<f32>, // x=W, y=H, z=alpha(0.06..0.14), w=validPrev(0/1)
+  params: vec4<f32>, // x=W, y=H, z=alpha, w=0 reset / 1 valid / 2 rigid geometry changed
 };
 @group(0) @binding(0) var<uniform> u: TempU;
 @group(0) @binding(1) var curAOGI: texture_2d<f32>;
@@ -1124,6 +1130,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let p = pd.xyz;
   let n = normalize(gn.xyz);
   let planeTol = 0.0025 * pd.w + 0.012;
+  let rigidChanged = u.params.w > 1.5;
 
   // SIGMA-lite 1-SPP Penumbra-Guided Shadow Pre-Filter + REBLUR-lite 3x3 Bilateral Moments
   // Computes local 3x3 bilateral mean & std-dev for fast variance-clamped anti-lag AND
@@ -1143,7 +1150,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       if (nq.x < 0 || nq.y < 0 || nq.x >= W || nq.y >= H) { continue; }
       let npd = textureLoad(curPosDepth, nq, 0);
       let ngn = textureLoad(curNormal, nq, 0);
-      if (npd.w <= 0.0 || ngn.w < 0.5) { continue; }
+      if (npd.w <= 0.0 || ngn.w < 0.5 || (rigidChanged && ngn.w != gn.w)) { continue; }
       if (dot(normalize(ngn.xyz), n) < 0.92) { continue; }
       if (abs(dot(n, npd.xyz - p)) > planeTol) { continue; }
       let nc = textureLoad(curAOGI, nq, 0);
@@ -1171,7 +1178,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       if (nq.x < 0 || nq.y < 0 || nq.x >= W || nq.y >= H) { continue; }
       let npd = textureLoad(curPosDepth, nq, 0);
       let ngn = textureLoad(curNormal, nq, 0);
-      if (npd.w <= 0.0 || ngn.w < 0.5) { continue; }
+      if (npd.w <= 0.0 || ngn.w < 0.5 || (rigidChanged && ngn.w != gn.w)) { continue; }
       if (dot(normalize(ngn.xyz), n) < 0.92) { continue; }
       if (abs(dot(n, npd.xyz - p)) > planeTol * 2.0) { continue; }
       let nm = textureLoad(curMeta, nq, 0);
@@ -1217,7 +1224,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     if (bw < 1e-4 || pq.x < 0 || pq.y < 0 || pq.x >= W || pq.y >= H) { continue; }
     let ppd = textureLoad(prevPosDepth, pq, 0);
     let pgn = textureLoad(prevNormal, pq, 0);
-    if (ppd.w <= 0.0 || pgn.w < 0.5) { continue; }
+    if (ppd.w <= 0.0 || pgn.w < 0.5 || (rigidChanged && pgn.w != gn.w)) { continue; }
     if (dot(normalize(pgn.xyz), n) < 0.9) { continue; }
     if (abs(dot(n, ppd.xyz - p)) > planeTol) { continue; }
     acc += textureLoad(prevAOGI, pq, 0) * bw;
@@ -1233,10 +1240,18 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     let boxMin = mu - sigma * vec4<f32>(3.0, 3.0, 3.0, 3.2) - vec4<f32>(0.06, 0.06, 0.06, 0.04);
     let boxMax = mu + sigma * vec4<f32>(3.0, 3.0, 3.0, 3.2) + vec4<f32>(0.06, 0.06, 0.06, 0.04);
     let clampedPrev = clamp(prev, boxMin, boxMax);
-    prev = mix(prev, clampedPrev, 0.22);
+    // On pose edits, trim incompatible lighting locally but keep accumulating
+    // stochastic GI on receivers whose neighborhood still supports the history.
+    prev = mix(prev, clampedPrev, select(0.22, 1.0, rigidChanged));
     textureStore(outAOGI, q, mix(prev, cur, u.params.z));
     // Reuse converged static shadow directly when curM.x < 0 (shadow trace skipped!)
-    let shAlpha = max(u.params.z, 0.16);
+    var shAlpha = vec2<f32>(max(u.params.z, 0.16));
+    if (rigidChanged) {
+      // A stationary floor pixel can move into or out of a shadow. React per
+      // light using the spatially filtered visibility to suppress single-ray noise.
+      let delta = abs(sigmaSh - prevSh);
+      shAlpha = mix(shAlpha, vec2<f32>(1.0), smoothstep(vec2<f32>(0.15), vec2<f32>(0.75), delta));
+    }
     let smoothSh = select(mix(prevSh, sigmaSh, shAlpha), prevSh, !doShadow);
     textureStore(outMeta, q, vec4<f32>(smoothSh, curM.zw));
   } else {
@@ -2012,10 +2027,10 @@ export class WebGPUFastSDFAO {
       layout: pipelineLayout(group0),
       compute: { module: d.createShaderModule({ code }), entryPoint: 'main' },
     });
-    const render = (layout, module, targets, entryPoint, vertices) => d.createRenderPipeline({
+    const render = (layout, module, targets, entryPoint, vertices, fragment = 'fs') => d.createRenderPipeline({
       layout,
       vertex: { module, entryPoint, buffers: [vertices] },
-      fragment: { module, entryPoint: 'fs', targets },
+      fragment: { module, entryPoint: fragment, targets },
       primitive: { topology: 'triangle-list', cullMode: 'back' },
       depthStencil: { format: 'depth24plus', depthWriteEnabled: true, depthCompare: 'less' },
     });
@@ -2033,7 +2048,7 @@ export class WebGPUFastSDFAO {
       // Static and analytic G-buffer draws use the original vertex path for all scenes.
       gbuffer: rigid ? null : render(gLayout, gbuffer, mrt, 'vs', vLayout),
       analyticGBuffer: rigid ? null : render(gLayout, gbuffer, mrt, 'vsDyn', dynVLayout),
-      rigidGBuffer: rigid ? render(gLayout, gbuffer, mrt, 'vsRigid', vLayout) : null,
+      rigidGBuffer: rigid ? render(gLayout, gbuffer, mrt, 'vsRigid', vLayout, 'fsRigid') : null,
       trace: compute(rigid ? traceWGSL(true) : TRACE_WGSL, groups.trace),
       reflect: compute(rigid ? reflectionTraceWGSL(true) : REFL_TRACE_WGSL, groups.reflect),
       composite: render(cLayout, composite, color, 'vs', vLayout),
@@ -2045,14 +2060,12 @@ export class WebGPUFastSDFAO {
   _prepareRigidMeshes() {
     const { changed, bindingsChanged } = this.rigidMeshes.prepare();
     if (changed) {
-      // A moving occluder also invalidates lighting history on stationary receivers.
-      this.hasPrev = false;
       this.stillFrames = 0;
       this._lastCompBG = null;
       this.lastSkipPct = 0;
     } else if (this._rigidMotion) {
-      // No writes to the hash during motion. Discard pre-motion values before reuse.
-      this.clearHash();
+      // Re-enable the world cache with fresh entries while preserving screen history.
+      this._clearWorldHash();
     }
     this._rigidMotion = changed;
     if (bindingsChanged) this.rigidBG = null;
@@ -2420,6 +2433,10 @@ export class WebGPUFastSDFAO {
     this.hasPrev = false;
     this.stillFrames = 0;
     this._lastCompBG = null;
+    this._clearWorldHash();
+  }
+
+  _clearWorldHash() {
     const d = this.device;
     d.queue.writeBuffer(this.decayUBuf, 0, new Uint32Array([HASH_SLOTS, 0, 0, 1]));
     const enc = d.createCommandEncoder();
@@ -2502,7 +2519,7 @@ export class WebGPUFastSDFAO {
     }
 
     const hasOrb = (this.emissiveCol[0] + this.emissiveCol[1] + this.emissiveCol[2]) > 1e-3;
-    this.stillFrames = (camSame && !hasDyn && !hasOrb) ? (this.stillFrames + 1) : 0;
+    this.stillFrames = (camSame && !hasDyn && !hasOrb && !this._rigidMotion) ? (this.stillFrames + 1) : 0;
     const traceShadows = !camSame || hasDyn || hasOrb || this.stillFrames < 28;
     const traceRefl = this.useGI && this.useReflections && (!camSame || hasDyn || hasOrb || this.stillFrames < 46);
     const effShadowSteps = (!camSame || hasDyn) ? Math.min(q.shadowSteps, 32) : q.shadowSteps;
@@ -2528,7 +2545,10 @@ export class WebGPUFastSDFAO {
     tf.set([this.emissiveCol[0], this.emissiveCol[1], this.emissiveCol[2], q.giMaxDist], 40);
     tf.set([this.aoW, this.aoH, this.frame, 0.0005], 44);
     tu.set([q.rays, q.maxSamples, this.useGI ? 1 : 0, (this.useHash && !hasDyn && !hasOrb && !this._rigidMotion) ? 1 : 0], 48);
-    const extraFlags = (this.reuseEnabled ? 1 : 0) | (traceShadows ? 2 : 0) | (q.multiBounce ? 4 : 0) | (hasDyn ? 8 : 0) | (!this.hasPrev ? 16 : 0) | ((effGiSteps & 0xFF) << 8);
+    // Secondary hits need shadows from the current pose, independently of whether
+    // the primary receiver can reproject its accumulated lighting.
+    const extraFlags = (this.reuseEnabled ? 1 : 0) | (traceShadows ? 2 : 0) | (q.multiBounce ? 4 : 0) | (hasDyn ? 8 : 0)
+      | (this.hasPrev ? 0 : 16) | (this._rigidMotion ? 32 : 0) | ((effGiSteps & 0xFF) << 8);
     tu.set([effShadowSteps, HASH_MASK, extraFlags, s.nodeCount], 52);
     tf.set([s.rootMin[0], s.rootMin[1], s.rootMin[2], 0], 56);
     tf.set([s.rootSpan[0], s.rootSpan[1], s.rootSpan[2], 0], 60);
@@ -2550,15 +2570,17 @@ export class WebGPUFastSDFAO {
     rf.set([this.aoW, this.aoH, q.reflRoughCut, 10.0], 48);
     rf.set([s.rootMin[0], s.rootMin[1], s.rootMin[2], 0], 52);
     rf.set([s.rootSpan[0], s.rootSpan[1], s.rootSpan[2], 0], 56);
-    const reflFlags = (q.reflChecker ? 1 : 0) | (q.reflUseBvh ? 2 : 0) | (hasDyn ? 4 : 0);
+    const reflFlags = (q.reflChecker && !this._rigidMotion ? 1 : 0) | (q.reflUseBvh ? 2 : 0) | (hasDyn ? 4 : 0);
     ru.set([s.nodeCount, (this.useGI && this.useReflections) ? 1 : 0, reflFlags, q.reflSteps], 60);
     rf.set(dynPR, 64);
     rf.set(dynCR, 80);
     d.queue.writeBuffer(this.reflUBuf, 0, rBuf);
 
     const rfData = new Float32Array(24);
+    let historyMode = 0;
+    if (this.hasPrev) historyMode = this._rigidMotion ? 2 : 1;
     rfData.set(this.prevVP, 0);
-    rfData.set([this.aoW, this.aoH, this.frame < 4 ? (1 / (this.frame + 1)) : 0.12, this.hasPrev ? 1 : 0], 16);
+    rfData.set([this.aoW, this.aoH, this.frame < 4 ? (1 / (this.frame + 1)) : 0.12, historyMode], 16);
     rfData.set([eye[0], eye[1], eye[2], 1], 20);
     d.queue.writeBuffer(this.reflFiltUBuf, 0, rfData);
 
@@ -2568,7 +2590,7 @@ export class WebGPUFastSDFAO {
     // Smooth hybrid EMA: 0.08 keeps moving orb/sun & orbiting camera completely flicker-free
     // while SHaRC world hash gives instant converged starting values on camera cuts.
     const alpha = this.frame < 4 ? (1 / (this.frame + 1)) : 0.08;
-    tempData.set([this.aoW, this.aoH, alpha, this.hasPrev ? 1 : 0], 16);
+    tempData.set([this.aoW, this.aoH, alpha, historyMode], 16);
     d.queue.writeBuffer(this.tempUBuf, 0, tempData);
 
     d.queue.writeBuffer(this.denoiseUBuf1, 0, new Uint32Array([this.aoW, this.aoH, 1, 1]));

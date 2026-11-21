@@ -8,7 +8,7 @@ function check(condition, message) {
 
 // Read the production textures through their existing texture bindings, including
 // the float32 world positions which do not require float32 filtering support.
-function textureReader(device) {
+export function textureReader(device) {
   const module = device.createShaderModule({code: `
     @group(0) @binding(0) var src: texture_2d<f32>;
     @group(0) @binding(1) var<storage, read_write> out: array<vec4f>;
@@ -82,7 +82,7 @@ async function gallery(demo, capture, read) {
   }
 
   check(stats.some(s => s.shadowed > 0), 'Moving chair did not cast a shadow on the static floor');
-  const {asset, instance, matrix} = demo.rigidMover;
+  const {asset, matrix} = demo.rigidMover;
   const single = await capture();
   const buildCount = gpu.rigidMeshes.stats.assetBuilds;
   const secondPose = matrix.slice();
@@ -95,19 +95,49 @@ async function gallery(demo, capture, read) {
   const one = await capture();
   check(!geometryChanges(one.pos, single.pos), 'Instance removal left stale raster geometry');
 
+  // First build a real cast shadow, then remove the chair with history intact.
+  // Filtered visibility should follow the raw visibility at the old footprint.
+  for (let i = 0; i < 5; i++) demo.renderOnce();
+  const shadow = await capture(false);
+  demo.setRigidMover(false);
+  const firstClear = await capture(false);
+  demo.renderOnce();
+  const thirdClear = await capture(false);
+  let hardShadowSamples = 0, recovered = 0;
+  for (let i = 0; i < base.pos.length; i += 4) {
+    if (base.pos[i + 3] <= 0 || shadow.pos[i + 3] !== base.pos[i + 3] || Math.abs(base.pos[i + 2]) > 0.04) continue;
+    for (const light of [0, 1]) {
+      const j = i + light;
+      if (shadow.meta[j] > 0.1 || shadow.filtered[j] > 0.35 ||
+          base.meta[j] < 0.85 || firstClear.meta[j] < 0.85 || thirdClear.meta[j] < 0.85) continue;
+      hardShadowSamples++;
+      if (thirdClear.filtered[j] > 0.65) recovered++;
+    }
+  }
+  check(hardShadowSamples > 3 && recovered >= hardShadowSamples * 0.7,
+    'Old chair shadow lingered on static floor: ' + JSON.stringify({hardShadowSamples, recovered}));
+
+  demo.setRigidMover(true, 2);
   const hidden = matrix.slice();
   hidden[14] -= 2;
-  gpu.rigidMeshes.setTransform(instance, hidden);
+  gpu.rigidMeshes.setTransform(demo.rigidMover.instance, hidden);
   const belowFloor = await capture();
   check(!geometryChanges(belowFloor.pos, base.pos), 'Hidden chair appeared through the floor');
   demo.setRigidMover(false);
   await capture(false); // First frame without the chair.
-  const restored = await capture(false); // Renderer returns to frame-zero sampling after motion.
+  const restored = await capture(false); // Leave sampling and temporal state untouched after removal.
+  const restoredFrame = gpu.frame - 1;
   check(!geometryChanges(restored.pos, base.pos), 'Removing all movers did not restore static geometry');
+  // Start an independent static control after measuring the transition. Raw sun
+  // and orb shadow rays are jittered by sample index, so compare the same rays.
+  gpu.clearHash();
+  demo.renderOnce();
+  gpu.frame = restoredFrame;
+  const control = await capture(false);
   let restoredShadowErrors = 0;
   for (let i = 0; i < base.pos.length; i += 4) {
-    if (Math.abs(base.meta[i] - restored.meta[i]) > 0.01 ||
-        Math.abs(base.meta[i + 1] - restored.meta[i + 1]) > 0.01) restoredShadowErrors++;
+    if (Math.abs(control.meta[i] - restored.meta[i]) > 0.01 ||
+        Math.abs(control.meta[i + 1] - restored.meta[i + 1]) > 0.01) restoredShadowErrors++;
   }
   check(restoredShadowErrors < 3, 'Shadow remained after removing the instance');
 
@@ -135,7 +165,7 @@ async function gallery(demo, capture, read) {
   const moved = await capture(false);
   check(gpu.pingIdx !== slot && geometryChanges(still.pos, moved.pos) > 12, 'Moved instance stayed frozen in the settled frame');
   demo.setRigidMover(false);
-  return stats;
+  return {poses: stats, hardShadowSamples, recovered};
 }
 
 // A split metallic floor viewed obliquely. A red panel above the floor lies
@@ -205,12 +235,14 @@ export async function run(demo) {
   async function capture(reset = true) {
     if (reset) gpu.clearHash(); // Compare poses with the same camera and frame-zero ray sequence.
     demo.renderOnce();
-    const [pos, gi, meta, color] = await Promise.all([
-      read(gpu.gPosDepth[1 - gpu.pingIdx]), read(gpu.rawAOGI), read(gpu.metaTex), read(gpu.context.getCurrentTexture())
+    const slot = 1 - gpu.pingIdx;
+    const [pos, gi, meta, filtered, color] = await Promise.all([
+      read(gpu.gPosDepth[slot]), read(gpu.rawAOGI), read(gpu.metaTex),
+      read(gpu.histMeta[slot]), read(gpu.context.getCurrentTexture()),
     ]);
-    return {pos, gi, meta, color};
+    return {pos, gi, meta, filtered, color};
   }
-  const poses = await gallery(demo, capture, read);
+  const galleryResult = await gallery(demo, capture, read);
   const reflections = await offscreenPanel(demo, capture);
-  return {poses, reflections};
+  return {...galleryResult, reflections};
 }

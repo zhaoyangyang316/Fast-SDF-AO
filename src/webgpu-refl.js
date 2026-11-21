@@ -469,7 +469,7 @@ export const REFL_TRACE_WGSL = reflectionTraceWGSL(false);
 export const REFL_FILTER_WGSL = /* wgsl */`
 struct ReflFiltU {
   prevViewProj: mat4x4<f32>,
-  params: vec4<f32>, // x=W, y=H, z=alpha, w=validPrev(0/1)
+  params: vec4<f32>, // x=W, y=H, z=alpha, w=history (0 reset, 1 valid, 2 rigid edit)
   eyePos: vec4<f32>, // xyz=eye
 };
 
@@ -504,14 +504,15 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let p = pd.xyz;
   let n = normalize(gn.xyz);
   let planeTol = 0.0025 * pd.w + 0.012;
+  let rigidChanged = u.params.w > 1.5;
 
   // REBLUR Specular-lite: hit-distance-guided & roughness-guided spatial filter + local moments
   // Close contact reflections (small c0.w) stay razor sharp; distant rough reflections filter smoothly!
   let isSkipped = c0.w < -0.5;
   var spSum = select(c0, vec4<f32>(0.0), isSkipped);
   var spW = select(1.0, 0.0, isSkipped);
-  var m1 = select(c0.rgb, vec3<f32>(0.0), isSkipped);
-  var m2 = select(c0.rgb * c0.rgb, vec3<f32>(0.0), isSkipped);
+  var m1 = select(c0, vec4<f32>(0.0), isSkipped);
+  var m2 = select(c0 * c0, vec4<f32>(0.0), isSkipped);
   var mCnt = select(1.0, 0.0, isSkipped);
   let normHit = select(clamp(c0.w, 0.05, 1.0), 0.35, isSkipped);
   let spGain = smoothstep(0.06, 0.30, rough) * clamp(sqrt(normHit) * 1.35, 0.45, 1.0);
@@ -524,7 +525,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         if (nq.x < 0 || nq.y < 0 || nq.x >= W || nq.y >= H) { continue; }
         let npd = textureLoad(curPosDepth, nq, 0);
         let ngn = textureLoad(curNormal, nq, 0);
-        if (npd.w <= 0.0 || ngn.w < 0.5) { continue; }
+        if (npd.w <= 0.0 || ngn.w < 0.5 || (rigidChanged && ngn.w != gn.w)) { continue; }
         if (dot(normalize(ngn.xyz), n) < 0.85) { continue; }
         if (abs(dot(n, npd.xyz - p)) > planeTol * f32(stepS) * 1.5) { continue; }
         let nar = textureLoad(gAlbedoRough, nq, 0);
@@ -534,15 +535,15 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         let w = select(0.45, 0.75, dx == 0 || dy == 0) * max(spGain, select(0.0, 1.0, isSkipped));
         spSum += nr * w;
         spW += w;
-        m1 += nr.rgb;
-        m2 += nr.rgb * nr.rgb;
+        m1 += nr;
+        m2 += nr * nr;
         mCnt += 1.0;
       }
     }
   }
   let filtered = select(c0, spSum / spW, spW > 1e-4);
-  let rMu = select(filtered.rgb, m1 / mCnt, mCnt > 0.5);
-  let rSigma = select(vec3<f32>(0.15), sqrt(max(m2 / max(mCnt, 1.0) - rMu * rMu, vec3<f32>(0.0))), mCnt > 1.5);
+  let rMu = select(filtered, m1 / max(mCnt, 1.0), mCnt > 0.5);
+  let rSigma = select(vec4<f32>(0.15), sqrt(max(m2 / max(mCnt, 1.0) - rMu * rMu, vec4<f32>(0.0))), mCnt > 1.5);
 
   // Mirror chrome uses faster temporal alpha (0.35); rough chrome uses tighter EMA (0.07);
   // checkerboard-skipped pixels keep 95% temporal history for rock-solid zero-flicker stability!
@@ -583,6 +584,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     let ppd = textureLoad(prevPosDepth, pq, 0);
     let pgn = textureLoad(prevNormal, pq, 0);
     if (ppd.w <= 0.0 || pgn.w < 0.5) { continue; }
+    if (rigidChanged && pgn.w != gn.w) { continue; }
     if (dot(normalize(pgn.xyz), n) < 0.90) { continue; }
     if (abs(dot(n, ppd.xyz - p)) > planeTol * (1.0 + virtWeight * 4.0)) { continue; }
     let par = textureLoad(gAlbedoRough, pq, 0);
@@ -608,6 +610,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         let ppd = textureLoad(prevPosDepth, pq, 0);
         let pgn = textureLoad(prevNormal, pq, 0);
         if (ppd.w <= 0.0 || pgn.w < 0.5) { continue; }
+        if (rigidChanged && pgn.w != gn.w) { continue; }
         if (dot(normalize(pgn.xyz), n) < 0.90) { continue; }
         if (abs(dot(n, ppd.xyz - p)) > planeTol) { continue; }
         let par = textureLoad(gAlbedoRough, pq, 0);
@@ -620,10 +623,21 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   if (wSum > 0.01) {
     var prevR = acc / wSum;
     // REBLUR variance-clamped reflection anti-lag (prevents moving orb / orbit ghosting)
-    let rMin = rMu - rSigma * 2.2 - vec3<f32>(0.04);
-    let rMax = rMu + rSigma * 2.2 + vec3<f32>(0.04);
+    var alpha = effAlpha;
+    if (rigidChanged && spW > 0.0) {
+      // An offscreen prop can change a reflection while its receiver stays
+      // fixed. Reject history outside the current neighborhood's radiance or
+      // hit-distance distribution, preserving accumulation on noisy rough hits.
+      let residual = max(abs(prevR - rMu) - 1.5 * rSigma, vec4<f32>(0.0));
+      let relative = residual.rgb / (0.12 + max(prevR.rgb, rMu.rgb));
+      let colorChange = smoothstep(0.10, 0.40, max(relative.r, max(relative.g, relative.b)));
+      let distanceChange = smoothstep(0.025, 0.12, residual.w);
+      alpha = mix(alpha, 1.0, max(colorChange, distanceChange));
+    }
+    let rMin = rMu.rgb - rSigma.rgb * 2.2 - vec3<f32>(0.04);
+    let rMax = rMu.rgb + rSigma.rgb * 2.2 + vec3<f32>(0.04);
     prevR = vec4<f32>(mix(prevR.rgb, clamp(prevR.rgb, rMin, rMax), select(0.55, 0.25, isSkipped)), prevR.w);
-    textureStore(outRefl, q, mix(prevR, filtered, effAlpha));
+    textureStore(outRefl, q, mix(prevR, filtered, alpha));
   } else {
     textureStore(outRefl, q, filtered);
   }

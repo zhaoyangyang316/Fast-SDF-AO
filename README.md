@@ -123,7 +123,9 @@ rigid.removeInstance(second);
 rigid.releaseAsset(chair);
 ```
 
-Poses are rotations and translations expressed as a Three.js matrix or a column-major 16-number array. Bake fixed scale into the input geometry. Changing a pose refits world-space instance bounds and uploads the changed records. AO, diffuse GI, sun and orb shadows, and glossy and mirror reflections can all hit the transformed triangles, including offscreen props. Offscreen moving hits use their interpolated vertex material and current lights. The coarse multi-bounce radiance volume still represents the static environment. Motion invalidates temporal lighting and suspends spatial hash reuse until geometry settles. Loading a replacement static scene clears its rigid assets and instances.
+Poses are rotations and translations expressed as a Three.js matrix or a column-major 16-number array. Bake fixed scale into the input geometry. Changing a pose refits world-space instance bounds and uploads the changed records. AO, diffuse GI, sun and orb shadows, and glossy and mirror reflections can all hit the transformed triangles, including offscreen props. Offscreen moving hits use their interpolated vertex material and current lights. The coarse multi-bounce radiance volume still represents the static environment.
+
+During motion, the renderer keeps accumulating lighting on matching surfaces. Changes in shadow visibility, reflected color or reflected hit distance make the affected pixels respond more quickly. Spatial hash reuse resumes with fresh entries when the meshes settle. Loading a replacement static scene clears its rigid assets and instances.
 
 The demo importer bakes child transforms and fixed scale into a single rigid prop. It shades imported props using vertex colors and material factors. Texture maps, skinning, morph animation and transparency are outside this path. When opening a glTF with external files, select its local dependencies alongside the model.
 
@@ -132,6 +134,7 @@ Run `npm test` for the package and CPU geometry checks. With Python Playwright a
 ```sh
 python3 test/webgpu-browser.py test/rigid-queries.mjs
 python3 test/webgpu-browser.py test/rigid-render.mjs
+python3 test/webgpu-browser.py test/rigid-motion.mjs
 python3 test/webgpu-browser.py benchmark/rigid-mesh-bench.mjs --scene gallery --width 1280 --height 720
 ```
 
