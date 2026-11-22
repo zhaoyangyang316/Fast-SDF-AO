@@ -1,6 +1,8 @@
+import { LOCAL_RIGID_SDF_WGSL } from './webgpu-rigid-sdf-wgsl.js';
+
 // The CPU scene packs both hierarchies in preorder. A missed box's escape
 // index jumps past its subtree, so traversal needs no stack or visit limit.
-export const RIGID_MESH_WGSL = /* wgsl */`
+const rigidMeshWGSL = localSdf => /* wgsl */`
 struct RigidInstance {
   world: mat4x4<f32>,
   asset: vec4<u32>, // first BLAS node, exclusive end, triangle base, stable instance ID
@@ -35,15 +37,20 @@ fn rigidRay(origin: vec3<f32>, direction: vec3<f32>) -> RigidRay {
   return RigidRay(origin, direction, 1.0 / select(direction, vec3<f32>(1.0), parallel), parallel);
 }
 
-fn rigidOverlapsBox(ray: RigidRay, lo: vec3<f32>, hi: vec3<f32>, tMin: f32, tMax: f32) -> bool {
-  if (any(ray.parallel & ((ray.origin < lo) | (ray.origin > hi)))) { return false; }
+fn rigidBoxInterval(ray: RigidRay, lo: vec3<f32>, hi: vec3<f32>, tMin: f32, tMax: f32) -> vec2<f32> {
+  if (any(ray.parallel & ((ray.origin < lo) | (ray.origin > hi)))) { return vec2<f32>(1.0, -1.0); }
   let a = (lo - ray.origin) * ray.inv;
   let b = (hi - ray.origin) * ray.inv;
   let near = select(min(a, b), vec3<f32>(tMin), ray.parallel);
   let far = select(max(a, b), vec3<f32>(tMax), ray.parallel);
   let entry = max(tMin, max(near.x, max(near.y, near.z)));
   let exitT = min(tMax, min(far.x, min(far.y, far.z)));
-  return entry <= exitT;
+  return vec2<f32>(entry, exitT);
+}
+
+fn rigidOverlapsBox(ray: RigidRay, lo: vec3<f32>, hi: vec3<f32>, tMin: f32, tMax: f32) -> bool {
+  let range = rigidBoxInterval(ray, lo, hi, tMin, tMax);
+  return range.x <= range.y;
 }
 
 // Return (t, weight of vertex 1, weight of vertex 2). A miss returns tMax.
@@ -72,6 +79,8 @@ struct RigidIntersection {
   bary: vec2<f32>,
 };
 
+${localSdf ? LOCAL_RIGID_SDF_WGSL : ''}
+
 fn rigidIntersect(origin: vec3<f32>, direction: vec3<f32>, tMin: f32, tMax: f32,
                   firstHit: bool) -> RigidIntersection {
   var hit = RigidIntersection(0xffffffffu, 0u, tMax, vec2<f32>(0.0));
@@ -91,6 +100,14 @@ fn rigidIntersect(origin: vec3<f32>, direction: vec3<f32>, tMin: f32, tMax: f32,
     let m = instance.world;
     let invRotation = transpose(mat3x3<f32>(m[0].xyz, m[1].xyz, m[2].xyz));
     let ray = rigidRay(invRotation * (origin - m[3].xyz), invRotation * direction);
+    ${localSdf ? `if (instance.asset.x == rigidSdfInfo.selected.x) {
+      let fieldHit = rigidSdfTrace(node.payload, ray, tMin, hit.t);
+      if (fieldHit.instance != 0xffffffffu) {
+        if (firstHit) { return fieldHit; }
+        hit = fieldHit;
+      }
+      continue;
+    }` : ''}
     var index = instance.asset.x;
     while (index < instance.asset.y) {
       let lower = rigidGeometry[2u * index];
@@ -136,6 +153,19 @@ fn rigidClosestHit(origin: vec3<f32>, direction: vec3<f32>, tMin: f32, tMax: f32
   var hit: RigidHit;
   hit.t = intersection.t;
   if (intersection.instance == 0xffffffffu) { return hit; }
+  ${localSdf ? `if (rigidInstances[intersection.instance].asset.x == rigidSdfInfo.selected.x) {
+    let cell = rigidSdfCell(intersection.address);
+    let normal = textureLoad(rigidSdfNormal, cell, 0).xyz * 2.0 - 1.0;
+    let material = textureLoad(rigidSdfMaterial, cell, 0);
+    hit.valid = 1u;
+    hit.instanceId = rigidInstances[intersection.instance].asset.w;
+    hit.primitiveId = 0xffffffffu;
+    hit.normal = normalize(rigidWorldNormal(intersection.instance, normal));
+    hit.geometricNormal = hit.normal;
+    hit.color = material.rgb;
+    hit.roughness = material.a * 2.0 - 1.0;
+    return hit;
+  }` : ''}
   let a = intersection.address;
   let v0 = bitcast<vec4<f32>>(rigidGeometry[a]);
   let v1 = bitcast<vec4<f32>>(rigidGeometry[a + 3u]);
@@ -159,3 +189,6 @@ fn rigidClosestHit(origin: vec3<f32>, direction: vec3<f32>, tMin: f32, tMax: f32
   return hit;
 }
 `;
+
+export const RIGID_MESH_WGSL = rigidMeshWGSL(false);
+export const RIGID_SDF_WGSL = rigidMeshWGSL(true);

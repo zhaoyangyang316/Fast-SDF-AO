@@ -39,6 +39,13 @@ canvas{display:block;width:100%;height:auto}
     <button data-scene="sponza-dragon" aria-pressed="false">Sponza &amp; Dragon</button>
     <label id="dragon-toggle" hidden><input id="dragon-visible" type="checkbox" checked> Show dragon</label>
     <button id="dragon-motion" hidden>Pause dragon</button>
+    <label id="dragon-trace-control" hidden>Dragon tracing
+      <select id="dragon-trace">
+        <option value="bvh" selected>Triangle BVH</option>
+        <option value="sdf">Voxel SDF</option>
+      </select>
+    </label>
+    <output id="dragon-trace-status" aria-live="polite" hidden></output>
     <select id="import-role" aria-label="Model import mode">
       <option value="static">Import as static scene</option>
       <option value="rigid">Import as moving mesh</option>
@@ -190,15 +197,28 @@ try {
   let dragon = null;
   const dragonVisible = document.querySelector('#dragon-visible');
   const dragonMotion = document.querySelector('#dragon-motion');
+  const dragonTrace = document.querySelector('#dragon-trace');
+  const dragonTraceStatus = document.querySelector('#dragon-trace-status');
   function syncDragonControls() {
     document.querySelector('#dragon-toggle').hidden = !dragon;
     dragonMotion.hidden = !dragon;
     dragonVisible.checked = dragon?.enabled ?? false;
     dragonMotion.disabled = !dragon?.enabled;
     dragonMotion.textContent = dragon?.playing ? 'Pause dragon' : 'Play dragon';
+    document.querySelector('#dragon-trace-control').hidden = !dragon;
+    dragonTrace.value = dragon?.requestedTraceMode ?? 'bvh';
+    let message = '';
+    if (dragon?.traceError) message = `Could not switch dragon tracing (${dragon.traceError}).`;
+    else if (dragon?.requestedTraceMode === 'sdf' && dragon.traceMode === 'bvh') message = 'Loading dragon distance field…';
+    dragonTraceStatus.value = message;
+    dragonTraceStatus.hidden = !message;
   }
   dragonVisible.onchange = () => dragon?.setEnabled(dragonVisible.checked);
   dragonMotion.onclick = () => dragon?.setPlaying(!dragon.playing);
+  dragonTrace.onchange = () => {
+    // The controller restores the active option and reports failures in the live status.
+    dragon?.setTraceMode(dragonTrace.value).catch(() => {});
+  };
   const rigidMatrix = new T.Matrix4();
   let emissiveOn = false;
   let moversOn = false;
@@ -395,6 +415,7 @@ try {
 
   async function selectScene(name) {
     const request = ++selection;
+    dragon?.cancelPendingTrace();
     statusEl.value = name === 'sponza-dragon'
       ? 'Loading Sponza architecture, dragon mesh and baked SDF · Preparing contact BVHs…'
       : `Loading ${name} mesh, FP16 SDF & SAH Contact BVH…`;
@@ -419,7 +440,7 @@ try {
     gpu.emissiveCol = (emissiveOn && name === 'gallery') ? [3.6, 2.0, 0.6] : [0, 0, 0];
     setStaticEnvironment(sc);
     if (sc.dragonData) {
-      dragon = createDragon(gpu.rigidMeshes, sc.dragonData, syncDragonControls);
+      dragon = createDragon(gpu, sc.dragonData, syncDragonControls);
       syncDragonControls();
     }
     const cam = (boxTestScene || rigidTestScene) && name === 'gallery'
@@ -563,6 +584,7 @@ try {
   }
 
   async function loadCustomThreeObject(rootObj, label, request = ++selection) {
+    dragon?.cancelPendingTrace();
     statusEl.value = `Normalizing ${label} & baking exact FP16 SDF on WebGPU…`;
     const { data, metalTris, glossyTris } = importMeshData(rootObj, label, 4.2, false);
     const mesh = makeThreeMesh(data);

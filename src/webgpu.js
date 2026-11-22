@@ -7,11 +7,12 @@
 // - Live In-Browser WebGPU Compute Exact-BVH SDF Baker (pack2x16float -> r16float 3D texture)
 
 import { RigidMeshScene } from './webgpu-rigid.js';
+import { RigidDistanceField } from './webgpu-rigid-field.js';
 import { PlanarReflectionPass } from './webgpu-planar.js';
 import { DYNAMIC_SHAPES_WGSL } from './webgpu-dynamic.js';
 import { bakeSDFOnGPU } from './webgpu-bake.js';
 import { REFL_TRACE_WGSL, REFL_FILTER_WGSL, reflectionTraceWGSL, rigidRadianceWGSL } from './webgpu-refl.js';
-import { RIGID_MESH_WGSL } from './webgpu-rigid-wgsl.js';
+import { RIGID_MESH_WGSL, RIGID_SDF_WGSL } from './webgpu-rigid-wgsl.js';
 
 export { bakeSDFOnGPU };
 
@@ -340,8 +341,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 }
 `;
 
-const traceWGSL = (rigid) => /* wgsl */`
-${rigid ? RIGID_MESH_WGSL + rigidRadianceWGSL('sampleSDF') : ''}
+const traceWGSL = (rigid, rigidCode = RIGID_MESH_WGSL) => /* wgsl */`
+${rigid ? rigidCode + rigidRadianceWGSL('sampleSDF') : ''}
 ${DYNAMIC_SHAPES_WGSL}
 struct TraceU {
   viewProj: mat4x4<f32>,
@@ -1325,8 +1326,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 }
 `;
 
-const compositeWGSL = (rigid) => /* wgsl */`
-${rigid ? RIGID_MESH_WGSL + rigidRadianceWGSL('compSampleSDF') : ''}
+const compositeWGSL = (rigid, rigidCode = RIGID_MESH_WGSL) => /* wgsl */`
+${rigid ? rigidCode + rigidRadianceWGSL('compSampleSDF') : ''}
 ${DYNAMIC_SHAPES_WGSL}
 struct CompU {
   viewProj: mat4x4<f32>,
@@ -1979,6 +1980,9 @@ function createSceneLayouts(device) {
     reflect: layout(COMPUTE, [uniform, tex, tex, tex, volume, volume, sampler, storage, storage, storage, tex, tex, output]),
     composite: layout(FRAGMENT, [{ ...uniform, visibility: VERTEX | FRAGMENT }, tex, tex, tex, tex, tex, volume, volume, tex, sampler, tex]),
     rigid: layout(COMPUTE | VERTEX | FRAGMENT, [storage, storage, storage]),
+    rigidSDF: layout(COMPUTE | VERTEX | FRAGMENT, [storage, storage, storage,
+      ...[volume, volume, volume, sampler, uniform].map(type => ({ ...type, visibility: COMPUTE | FRAGMENT })),
+    ]),
   };
 }
 
@@ -2086,11 +2090,12 @@ export class WebGPUFastSDFAO {
     this.linSamp = d.createSampler({ magFilter: 'linear', minFilter: 'linear', addressModeU: 'clamp-to-edge', addressModeV: 'clamp-to-edge', addressModeW: 'clamp-to-edge' });
   }
 
-  _createScenePipelines(rigid) {
+  _createScenePipelines(rigid, useLocalSDF = false) {
     const d = this.device;
     const groups = this._sceneLayouts;
+    const rigidCode = useLocalSDF ? RIGID_SDF_WGSL : RIGID_MESH_WGSL;
     const pipelineLayout = group0 => d.createPipelineLayout({
-      bindGroupLayouts: rigid ? [group0, groups.rigid] : [group0],
+      bindGroupLayouts: rigid ? [group0, useLocalSDF ? groups.rigidSDF : groups.rigid] : [group0],
     });
     const vLayout = {
       arrayStride: 40,
@@ -2123,7 +2128,7 @@ export class WebGPUFastSDFAO {
       ? GBUFFER_WGSL + RIGID_MESH_WGSL + RIGID_VERTEX_WGSL
       : GBUFFER_WGSL });
     const composite = d.createShaderModule({ code: rigid
-      ? compositeWGSL(true) + RIGID_VERTEX_WGSL
+      ? compositeWGSL(true, rigidCode) + RIGID_VERTEX_WGSL
       : COMPOSITE_WGSL });
     const gLayout = pipelineLayout(groups.raster);
     const cLayout = pipelineLayout(groups.composite);
@@ -2134,12 +2139,39 @@ export class WebGPUFastSDFAO {
       gbuffer: rigid ? null : render(gLayout, gbuffer, mrt, 'vs', vLayout),
       analyticGBuffer: rigid ? null : render(gLayout, gbuffer, mrt, 'vsDyn', dynVLayout),
       rigidGBuffer: rigid ? render(gLayout, gbuffer, mrt, 'vsRigid', vLayout, 'fsRigid') : null,
-      trace: compute(rigid ? traceWGSL(true) : TRACE_WGSL, groups.trace),
-      reflect: compute(rigid ? reflectionTraceWGSL(true) : REFL_TRACE_WGSL, groups.reflect),
+      trace: compute(rigid ? traceWGSL(true, rigidCode) : TRACE_WGSL, groups.trace),
+      reflect: compute(rigid ? reflectionTraceWGSL(true, rigidCode) : REFL_TRACE_WGSL, groups.reflect),
       composite: render(cLayout, composite, color, 'vs', vLayout),
       analyticComposite: render(cLayout, composite, color, 'vsDyn', dynVLayout),
       rigidComposite: rigid ? render(cLayout, composite, color, 'vsRigid', vLayout) : null,
     };
+  }
+
+  // All instances of the selected asset share one immutable, object-space field.
+  setRigidTraceMode(asset, mode, field) {
+    if (!this.rigidMeshes.assets.has(asset)) throw new RangeError('Unknown rigid asset');
+    if (mode !== 'sdf' && mode !== 'bvh') throw new RangeError('Expected rigid trace mode bvh or sdf');
+    if (mode === 'sdf') {
+      if (this._fieldAsset !== asset) {
+        if (!field) throw new TypeError('SDF tracing requires an object-space distance field');
+        this.rigidSDFPipes ??= this._createScenePipelines(true, true);
+        const resource = new RigidDistanceField(this.device, field);
+        this._rigidField?.destroy();
+        this._rigidField = resource;
+        this._fieldAsset = asset;
+      } else if (this._fieldEnabled) return;
+    } else if (!this._fieldEnabled || this._fieldAsset !== asset) return;
+    this._fieldEnabled = mode === 'sdf';
+    this.rigidBG = null;
+    this.clearHash();
+  }
+
+  _releaseRigidField() {
+    this._rigidField?.destroy();
+    this._rigidField = null;
+    this._fieldAsset = null;
+    this._fieldEnabled = false;
+    this.rigidBG = null;
   }
 
   _prepareRigidMeshes() {
@@ -2154,18 +2186,21 @@ export class WebGPUFastSDFAO {
     }
     this._rigidMotion = changed;
     if (bindingsChanged) this.rigidBG = null;
+    if (this._rigidField && !this.rigidMeshes.assets.has(this._fieldAsset)) this._releaseRigidField();
     if (!this.rigidMeshes.count) return this.scenePipes;
-    this.rigidPipes ??= this._createScenePipelines(true);
+    const field = this._fieldEnabled ? this._rigidField : null;
+    if (field) field.setRoot(this.rigidMeshes.assets.get(this._fieldAsset).root);
+    else this.rigidPipes ??= this._createScenePipelines(true);
     if (!this.rigidBG) {
       const { instanceBuffer, tlasBuffer, geometryBuffer } = this.rigidMeshes;
+      const resources = [instanceBuffer, tlasBuffer, geometryBuffer].map(buffer => ({ buffer }));
+      if (field) resources.push(...field.views, this.linSamp, { buffer: field.uniform });
       this.rigidBG = this.device.createBindGroup({
-        layout: this._sceneLayouts.rigid,
-        entries: [instanceBuffer, tlasBuffer, geometryBuffer].map((buffer, binding) => ({
-          binding, resource: { buffer },
-        })),
+        layout: field ? this._sceneLayouts.rigidSDF : this._sceneLayouts.rigid,
+        entries: resources.map((resource, binding) => ({ binding, resource })),
       });
     }
-    return this.rigidPipes;
+    return field ? this.rigidSDFPipes : this.rigidPipes;
   }
 
   _drawComposite(pass, pipes, lighting, dynPR, dynCount) {
@@ -2262,7 +2297,7 @@ export class WebGPUFastSDFAO {
     if (planarReflectionZ !== null && !Number.isFinite(planarReflectionZ)) throw new TypeError('Expected a finite planar reflection height');
     if (this.sceneRes) {
       this.rigidMeshes.clear();
-      this.rigidBG = null;
+      this._releaseRigidField();
       this._rigidMotion = false;
       this.sceneRes.vb.destroy();
       this.sceneRes.ib.destroy();

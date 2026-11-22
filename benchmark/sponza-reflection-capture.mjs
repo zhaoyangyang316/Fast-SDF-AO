@@ -9,7 +9,7 @@ function base64(bytes) {
   return btoa(text);
 }
 
-async function png(width, height, rgba) {
+export async function png(width, height, rgba) {
   const canvas = new OffscreenCanvas(width, height);
   canvas.getContext('2d').putImageData(new ImageData(rgba, width, height), 0, 0);
   const blob = await canvas.convertToBlob({type: 'image/png'});

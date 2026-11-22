@@ -16,10 +16,22 @@ export function dragonPose(seconds, out = new Float32Array(16)) {
   return out;
 }
 
-export function createDragon(rigidMeshes, data, onStateChange) {
+let dragonField;
+function loadDragonField() {
+  dragonField ??= import('./dragon-sdf.js').then(mod => mod.loadDragonSDF()).catch(error => {
+    dragonField = null;
+    throw error;
+  });
+  return dragonField;
+}
+
+export function createDragon(gpu, data, onStateChange) {
+  const rigidMeshes = gpu.rigidMeshes;
   const asset = rigidMeshes.registerAsset(data);
   const matrix = dragonPose(0);
   let instance = null, time = 0, playing = true;
+  let traceMode = 'bvh', requestedTraceMode = 'bvh', traceError = '';
+  let traceRequest = 0, disposed = false;
   try {
     instance = rigidMeshes.createInstance(asset, matrix);
   } catch (error) {
@@ -32,6 +44,38 @@ export function createDragon(rigidMeshes, data, onStateChange) {
     get time() { return time; },
     get enabled() { return instance !== null; },
     get playing() { return playing; },
+    get traceMode() { return traceMode; },
+    get requestedTraceMode() { return requestedTraceMode; },
+    get traceError() { return traceError; },
+    async setTraceMode(mode) {
+      if (mode !== 'bvh' && mode !== 'sdf') throw new RangeError('Expected dragon trace mode bvh or sdf');
+      if (disposed) throw new Error('Dragon scene has been released');
+      const request = ++traceRequest;
+      requestedTraceMode = mode;
+      traceError = '';
+      onStateChange();
+      if (mode === traceMode) return traceMode;
+      try {
+        const field = mode === 'sdf' ? await loadDragonField() : undefined;
+        if (request !== traceRequest) return traceMode;
+        gpu.setRigidTraceMode(asset, mode, field);
+        traceMode = mode;
+      } catch (error) {
+        if (request !== traceRequest) return traceMode;
+        requestedTraceMode = traceMode;
+        traceError = error.message;
+        throw error;
+      } finally {
+        if (request === traceRequest) onStateChange();
+      }
+      return traceMode;
+    },
+    cancelPendingTrace() {
+      if (requestedTraceMode === traceMode) return;
+      traceRequest++;
+      requestedTraceMode = traceMode;
+      onStateChange();
+    },
     setTime(seconds) {
       if (time === seconds) return;
       dragonPose(seconds, matrix);
@@ -52,6 +96,9 @@ export function createDragon(rigidMeshes, data, onStateChange) {
       onStateChange();
     },
     dispose() {
+      if (disposed) return;
+      disposed = true;
+      traceRequest++;
       if (instance !== null) rigidMeshes.removeInstance(instance);
       instance = null;
       if (!rigidMeshes.getInstanceCountForAsset(asset)) rigidMeshes.releaseAsset(asset);

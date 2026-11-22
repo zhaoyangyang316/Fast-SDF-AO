@@ -62,8 +62,8 @@ fn rigidRadiance(hit: RigidHit, p: vec3<f32>, dir: vec3<f32>, sunDir: vec3<f32>,
 }
 `;
 
-export const reflectionTraceWGSL = (rigid) => /* wgsl */`
-${rigid ? RIGID_MESH_WGSL + rigidRadianceWGSL('sampleSDF') : ''}
+export const reflectionTraceWGSL = (rigid, rigidCode = RIGID_MESH_WGSL) => /* wgsl */`
+${rigid ? rigidCode + rigidRadianceWGSL('sampleSDF') : ''}
 ${DYNAMIC_SHAPES_WGSL}
 struct ReflU {
   curViewProj: mat4x4<f32>,

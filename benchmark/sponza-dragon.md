@@ -2,7 +2,7 @@
 
 ![A red dragon above a polished floor, with its wings and tail visible in the reflection](sponza-dragon-preview.png)
 
-The WebGPU preset frames the gliding dragon and its reflection from a camera 1.5 m above the nave floor, looking down toward the courtyard center. Sponza contributes 243,645 static triangles and the rigid dragon adds 43,440, for 287,085 in the scene. The dragon keeps its modeled wing pose. Rigid-mesh rays intersect its local-space BVH. The architecture uses a static contact hierarchy and baked distance field. [Sponza attribution](../assets/sponza-dragon/SPONZA.md) · [Red Dragon attribution](../assets/sponza-dragon/DRAGON-LICENSE.md)
+The WebGPU preset frames the gliding dragon and its reflection from a camera 1.5 m above the nave floor, looking down toward the courtyard center. Sponza contributes 243,645 static triangles and the rigid dragon adds 43,440, for 287,085 in the scene. The dragon keeps its modeled wing pose. By default, rays intersect its local-space triangle BVH. The **Dragon tracing** control also offers a 25 mm voxel SDF. The architecture uses a static contact hierarchy and baked distance field. [Sponza attribution](../assets/sponza-dragon/SPONZA.md) · [Red Dragon attribution](../assets/sponza-dragon/DRAGON-LICENSE.md)
 
 ## Geometry and motion
 
@@ -12,11 +12,17 @@ At 33 reference points in free space and on surfaces, the static field's distanc
 
 Sampling the flight for 10 seconds at 30 Hz covered a complete loop. At all 301 sampled poses, the dragon's lowest vertex was 0.36–0.60 m above the floor. Even the triangle bounding boxes stayed more than 0.10 m from the non-floor architecture.
 
+## Dragon tracing comparison
+
+At two flight poses, Chromium with SwiftShader traced the same 1,086 rays per mode. Independent CPU triangle intersections supplied the reference. The BVH matched every hit and miss. The voxel SDF recovered all 476 reference hits and produced two extra hits. On the wings, its 95th-percentile distance error was 2.3 mm for face-on rays and 89 mm for grazing rays. All 32 rays aimed through known gaps in the bounding box passed through. [GPU probe](../test/sponza-dragon-queries.mjs) · [Same-pose images](sponza-dragon-trace-modes.png)
+
+At 512 × 288 on High, the primary depth and normals matched across modes at both poses. The reflected red dragon pixels overlapped by 90.7% at 0 s and 92.2% at 2 s, measured as the intersection divided by the union after subtracting the empty-floor image.
+
 ## Floor reflections
 
 ![The same Sponza floor and dragon before and after rendering the architecture from the reflected camera](sponza-reflection-comparison.png)
 
-The ground-floor mirror rasterizes Sponza’s triangles from the reflected camera and checks the dragon’s BVH up to the nearest static hit. This restores the columns, banners and arches across the floor. The previous mirror traced a 12.5 cm static distance field, capped its rays at 10.5 m and used the coarse radiance volume when it could not recover the surface color from the main view. These approximations produced broken silhouettes and misplaced colors. The current mirror shows one bounce. Lighting estimates on offscreen surfaces still use the distance field and radiance volume. [Floor material and reflection path](../assets/sponza-dragon/SPONZA.md)
+The ground-floor mirror rasterizes Sponza’s triangles from the reflected camera and traces the selected dragon representation up to the nearest static hit. This restores the columns, banners and arches across the floor. The previous mirror traced a 12.5 cm static distance field, capped its rays at 10.5 m and used the coarse radiance volume when it could not recover the surface color from the main view. These approximations produced broken silhouettes and misplaced colors. The current mirror shows one bounce. Lighting estimates on offscreen surfaces still use the distance field and radiance volume. [Floor material and reflection path](../assets/sponza-dragon/SPONZA.md)
 
 For each interior mirror pixel at 704 × 396, the CPU reference intersects the camera ray with the courtyard floor at *z* = 0 and reflects the direction about the floor normal. It starts 0.1 mm along that reflected ray to clear the mirror itself, then finds the nearest double-sided static triangle out to 100 m. We compared the old shader’s instrumented hit distance at commit `9cce731` with the new raster pass’s distance, counting misses as failures. The camera and geometry were identical. [Capture probe](sponza-reflection-capture.mjs) · [Triangle reference](sponza-reflection-reference.py)
 
@@ -60,7 +66,7 @@ Headless Chromium 156 used the SwiftShader software adapter at 320 × 180 on Hig
 | Dragon parked | 1,611.0 ms | 3,084.9 ms |
 | Dragon moving | 1,598.6 ms | 1,818.0 ms |
 
-The parked dragon took 1.83× the empty-courtyard median frame time. The moving dragon took 0.99× the parked median, with block medians ranging from 1,535.9 ms to 1,655.5 ms. These software timings include pose-dependent changes to visibility and shading. The earlier SDF mirror run on the same camera and software adapter recorded 518.1 ms empty, 1,069.0 ms parked and 1,043.2 ms moving. The moving case was 53% slower in the planar run. These separate runs also include run-to-run variation. Hardware GPU timings remain unmeasured. [Previous measurements](https://github.com/zhaoyangyang316/Fast-SDF-AO/blob/9cce731284a70d269839343824254fb40b1620c3/benchmark/sponza-dragon-results.json)
+The parked dragon took 1.83× the empty-courtyard median frame time. The moving dragon took 0.99× the parked median, with block medians ranging from 1,535.9 ms to 1,655.5 ms. These software timings include pose-dependent changes to visibility and shading. An earlier run that traced the static architecture with its SDF and used the triangle BVH for the dragon recorded 518.1 ms empty, 1,069.0 ms parked and 1,043.2 ms moving. The moving case was 53% slower in the planar run. These separate runs also include run-to-run variation. Hardware GPU timings remain unmeasured. [Previous measurements](https://github.com/zhaoyangyang316/Fast-SDF-AO/blob/9cce731284a70d269839343824254fb40b1620c3/benchmark/sponza-dragon-results.json)
 
 The dragon BVH was built once. Each of the 36 measured moving frames refitted the instance hierarchy and uploaded 80 bytes of pose data and 32 bytes of bounds. The renderer recorded zero geometry uploads or acceleration-structure builds during those frames. The 95th percentile for JavaScript preparation of the rigid scene was 0.2 ms. The median WebGPU timestamp span from the G-buffer pass through final compositing was 1,594.6 ms.
 
@@ -72,6 +78,8 @@ Serve the checkout with `python3 -m http.server 8000`, open [the preset](http://
 
 ```sh
 python3 benchmark/sponza-dragon-clearance.py
+python3 test/webgpu-browser.py test/sponza-dragon-queries.mjs --scene sponza-dragon
+python3 test/webgpu-browser.py test/sponza-dragon-trace-modes.mjs --scene sponza-dragon --width 512 --height 288 --probe-args '{"liveLoop":true}'
 python3 test/webgpu-browser.py benchmark/sponza-reflection-capture.mjs --scene sponza-dragon --width 704 --height 396 > capture.json
 python3 benchmark/sponza-reflection-reference.py capture.json --out mirror-check
 python3 test/webgpu-browser.py benchmark/sponza-dragon-quality.mjs --scene sponza-dragon --width 320 --height 180

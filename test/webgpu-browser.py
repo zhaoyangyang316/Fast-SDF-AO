@@ -35,7 +35,17 @@ def main():
     init = """
       window.deviceErrors = [];
       const targets = new WeakMap();
+      let activeDevice;
+      if (PACE_LIVE_LOOP) {
+        // The offscreen target has no swap chain to pace frames on a slow adapter.
+        const nativeRAF = window.requestAnimationFrame.bind(window);
+        window.requestAnimationFrame = callback => nativeRAF(async time => {
+          if (activeDevice) await activeDevice.queue.onSubmittedWorkDone();
+          callback(time);
+        });
+      }
       GPUCanvasContext.prototype.configure = function({device, format}) {
+        activeDevice = device;
         const size = RESOLUTION;
         this.canvas.width = size[0];
         this.canvas.height = size[1];
@@ -45,7 +55,7 @@ def main():
         }));
       };
       GPUCanvasContext.prototype.getCurrentTexture = function() { return targets.get(this); };
-    """.replace("RESOLUTION", json.dumps([args.width, args.height]))
+    """.replace("RESOLUTION", json.dumps([args.width, args.height])).replace("PACE_LIVE_LOOP", json.dumps(bool(args.probe_args.get("liveLoop"))))
     flags = ["--enable-unsafe-webgpu"]
     if args.software:
         flags += ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader",
@@ -72,7 +82,7 @@ def main():
                 result = page.evaluate("""async ([path, options]) => {
                   const demo = window.wgpuDemo;
                   if (!demo) throw Error(document.querySelector('#err')?.textContent || 'Demo startup failed');
-                  demo.stopLoop();
+                  if (!options.liveLoop) demo.stopLoop();
                   await demo.gpu.device.queue.onSubmittedWorkDone();
                   const {run} = await import(path);
                   let result;

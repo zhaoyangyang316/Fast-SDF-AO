@@ -6,7 +6,7 @@ Fast-SDF-AO’s adaptation uses meters and a Z-up coordinate system. The ground-
 
 The OBJ’s `floor` material covers two levels. There are 11,248 upward-facing triangles at ground level (`z = 0`) and 7,744 on the upper walkway (`z ≈ 4.18 m`). Both use the original vertex colors and a signed roughness of −5/127. This encodes a smooth conductor whose reflections are tinted by the floor color. Turning off reflections leaves only the direct specular lighting on this material.
 
-The WebGPU preset passes `planarReflectionZ: 0` to `loadScene` for the courtyard mirror. A camera reflected across this plane rasterizes the static architecture. Each output pixel stores the nearest static surface’s radiance and distance from the reflected camera. This distance limits the reflection ray’s search for a closer hit on the dragon’s BVH. The upper walkway follows the existing smooth-conductor reflection path at its own height.
+The WebGPU preset passes `planarReflectionZ: 0` to `loadScene` for the courtyard mirror. A camera reflected across this plane rasterizes the static architecture. Each output pixel stores the nearest static surface’s radiance and distance from the reflected camera. This distance limits the reflection ray’s search for a closer hit on the moving dragon. The upper walkway follows the existing smooth-conductor reflection path at its own height.
 
 The previous ground-floor reflection traced Sponza’s 12.5 cm distance field for static hits. If a hit matched a surface visible in the main camera, its color came from the G-buffer. Other hits used the coarse radiance volume, and misses returned sky lighting. This produced gaps and streaks along columns and banners even when the reflected dragon silhouette was accurate.
 
@@ -22,7 +22,7 @@ The conversion produces `sponza-mesh.bin.gz` with 162,515 vertices and 243,645 t
 
 ## Static distance field
 
-`sponza.f16.gz` stores distances to the static architecture on a 304 × 192 × 136 grid of 0.125 m cubes. It uses FP16 values clipped to ±1.5 m and occupies 2.12 MiB compressed. The courtyard floor at z = 0 passes through a layer of voxel centers. The animated dragon is traced separately against its own triangles.
+`sponza.f16.gz` stores distances to the static architecture on a 304 × 192 × 136 grid of 0.125 m cubes. It uses FP16 values clipped to ±1.5 m and occupies 2.12 MiB compressed. The courtyard floor at z = 0 passes through a layer of voxel centers. The **Dragon tracing** selector switches between triangle intersections and a separate voxel distance field baked in the dragon’s local coordinates. The scene loads that field the first time **Voxel SDF** is selected. [Dragon asset and bake](DRAGON-LICENSE.md)
 
 To rebuild the field from the distributed mesh, run the following command with Node.js and a C++17 compiler. It calls the repository’s native baker and regenerates `sponza-sdf.js` with the world-space volume bounds. The checked-in mesh takes about six seconds on four CPU cores once the baker has compiled.
 

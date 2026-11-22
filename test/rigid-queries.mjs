@@ -52,12 +52,20 @@ export function referenceRigidHit(meshes, ray) {
       ...interpolate(color).toArray(), r] };
 }
 
-export async function rigidQueryPipeline(device) {
-  const module = device.createShaderModule({code: RIGID_MESH_WGSL + QUERY});
-  return device.createComputePipelineAsync({layout: 'auto', compute: {module, entryPoint: 'main'}});
+export async function rigidQueryPipeline(device, shader = RIGID_MESH_WGSL, sceneLayout = null) {
+  const module = device.createShaderModule({code: shader + QUERY});
+  let layout = 'auto';
+  if (sceneLayout) {
+    const ioLayout = device.createBindGroupLayout({entries: [
+      {binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: {type: 'read-only-storage'}},
+      {binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: {type: 'storage'}},
+    ]});
+    layout = device.createPipelineLayout({bindGroupLayouts: [ioLayout, sceneLayout]});
+  }
+  return device.createComputePipelineAsync({layout, compute: {module, entryPoint: 'main'}});
 }
 
-export async function queryRigidBatch(device, scene, pipeline, input) {
+export async function queryRigidBatch(device, scene, pipeline, input, sceneGroup = null) {
   const bytes = input.length / 8 * 64;
   function buffer(size, usage) { return device.createBuffer({size, usage}); }
   const src = buffer(input.byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
@@ -75,7 +83,7 @@ export async function queryRigidBatch(device, scene, pipeline, input) {
     const pass = enc.beginComputePass();
     pass.setPipeline(pipeline);
     pass.setBindGroup(0, io);
-    pass.setBindGroup(1, group(1, [scene.instanceBuffer, scene.tlasBuffer, scene.geometryBuffer]));
+    pass.setBindGroup(1, sceneGroup ?? group(1, [scene.instanceBuffer, scene.tlasBuffer, scene.geometryBuffer]));
     pass.dispatchWorkgroups(Math.ceil(input.length / 8 / 32));
     pass.end();
     enc.copyBufferToBuffer(dst, 0, read, 0, bytes);
