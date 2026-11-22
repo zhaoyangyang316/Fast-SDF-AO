@@ -6,14 +6,14 @@
     ],
     "camera": {
       "eye": [
-        -5.9,
-        -1.1199999999999997,
-        1.65
+        -8.5,
+        -1.12,
+        1.4999999999999991
       ],
       "target": [
-        1.1,
-        0.12,
-        1.36
+        -1.9500000000000002,
+        -0.2750000000000001,
+        0
       ]
     },
     "motionFps": 15,
@@ -28,135 +28,135 @@
       160,
       90
     ],
-    "movingPoseAPixels": 437,
-    "poseBDragonPixels": 832,
+    "movingPoseAPixels": 242,
+    "poseBDragonPixels": 379,
     "visibleSurfacePixels": 14400,
-    "dragonSurfaceCoverage": 0.057777777777777775,
-    "poseChangeSilhouetteSamples": 757,
+    "dragonSurfaceCoverage": 0.026319444444444444,
+    "poseChangeSilhouetteSamples": 331,
     "distantBackgroundTemporal": {
       "parked": {
-        "pixels": 240256,
-        "mae": 0.00437706874527684,
-        "rms": 0.005536781287719957,
+        "pixels": 496704,
+        "mae": 0.003988438409667126,
+        "rms": 0.004480100421380372,
         "p95": 0.0078125,
-        "fractionAbove5pct": 0.0003954115610015983
+        "fractionAbove5pct": 2.013271485633295e-06
       },
       "moving": {
-        "pixels": 240256,
-        "mae": 0.005636134308537698,
-        "rms": 0.013299881530486083,
-        "p95": 0.01171875,
-        "fractionAbove5pct": 0.0049988345764517845
+        "pixels": 496704,
+        "mae": 0.0055720515067726115,
+        "rms": 0.024395488092804448,
+        "p95": 0.0078125,
+        "fractionAbove5pct": 0.006188796546836748
       }
     },
     "matchedPoseDuringMotion": {
       "visibleSurfaces": {
         "pixels": 57600,
-        "mae": 0.0072739941634072085,
-        "rms": 0.014383585085531808,
-        "p95": 0.0244140625,
-        "fractionAbove5pct": 0.014427083333333333
+        "mae": 0.0040994362321504245,
+        "rms": 0.006919774041202793,
+        "p95": 0.0107421875,
+        "fractionAbove5pct": 0.002482638888888889
       },
       "dragon": {
-        "pixels": 3328,
-        "mae": 0.009099363658839524,
-        "rms": 0.014799194039032855,
-        "p95": 0.02880859375,
-        "fractionAbove5pct": 0.012319711538461538
+        "pixels": 1516,
+        "mae": 0.009306181994974929,
+        "rms": 0.014363444219160972,
+        "p95": 0.0283203125,
+        "fractionAbove5pct": 0.010554089709762533
       },
       "recentlyVacated": {
-        "pixels": 1224,
-        "mae": 0.014844186119767584,
-        "rms": 0.022784905282204566,
-        "p95": 0.048828125,
-        "fractionAbove5pct": 0.0457516339869281
+        "pixels": 484,
+        "mae": 0.008644939537316284,
+        "rms": 0.013852295658222711,
+        "p95": 0.02978515625,
+        "fractionAbove5pct": 0.01652892561983471
       }
     },
     "stoppedFrameError": {
       "1": {
         "visibleSurfaces": {
           "pixels": 57600,
-          "mae": 0.0063280969745496745,
-          "rms": 0.011902959148857875,
-          "p95": 0.02197265625,
-          "fractionAbove5pct": 0.010434027777777778
+          "mae": 0.003512362946699029,
+          "rms": 0.005873714449813187,
+          "p95": 0.00927734375,
+          "fractionAbove5pct": 0.0017013888888888888
         },
         "dragon": {
-          "pixels": 3328,
-          "mae": 0.007628087613715569,
-          "rms": 0.01182124020479409,
-          "p95": 0.02490234375,
-          "fractionAbove5pct": 0.006610576923076923
+          "pixels": 1516,
+          "mae": 0.007592219743535073,
+          "rms": 0.011665224590904223,
+          "p95": 0.021484375,
+          "fractionAbove5pct": 0.008575197889182058
         },
         "recentlyVacated": {
-          "pixels": 1224,
-          "mae": 0.013190441681368239,
-          "rms": 0.020016979043552076,
-          "p95": 0.044921875,
-          "fractionAbove5pct": 0.03758169934640523
+          "pixels": 484,
+          "mae": 0.0068441780845518545,
+          "rms": 0.011153215206230955,
+          "p95": 0.0263671875,
+          "fractionAbove5pct": 0.006198347107438017
         }
       },
       "3": {
         "visibleSurfaces": {
           "pixels": 57600,
-          "mae": 0.0058381621778240385,
-          "rms": 0.010049679781252464,
-          "p95": 0.01806640625,
-          "fractionAbove5pct": 0.006458333333333333
+          "mae": 0.0036044176121390226,
+          "rms": 0.005277525676428961,
+          "p95": 0.0087890625,
+          "fractionAbove5pct": 0.0008333333333333334
         },
         "dragon": {
-          "pixels": 3328,
-          "mae": 0.006687269029591834,
-          "rms": 0.00953808247755028,
-          "p95": 0.01953125,
-          "fractionAbove5pct": 0.0033052884615384615
+          "pixels": 1516,
+          "mae": 0.006541984556572516,
+          "rms": 0.009134573826565254,
+          "p95": 0.0166015625,
+          "fractionAbove5pct": 0.0013192612137203166
         },
         "recentlyVacated": {
-          "pixels": 1224,
-          "mae": 0.010660164209798846,
-          "rms": 0.015864630154344386,
-          "p95": 0.03466796875,
-          "fractionAbove5pct": 0.016339869281045753
+          "pixels": 484,
+          "mae": 0.006143994166086998,
+          "rms": 0.00938677919870317,
+          "p95": 0.0205078125,
+          "fractionAbove5pct": 0.002066115702479339
         }
       },
       "8": {
         "visibleSurfaces": {
           "pixels": 57600,
-          "mae": 0.004955133730257614,
-          "rms": 0.008068590345883902,
-          "p95": 0.0146484375,
-          "fractionAbove5pct": 0.0024305555555555556
+          "mae": 0.00317427532680762,
+          "rms": 0.0043302349711259605,
+          "p95": 0.0078125,
+          "fractionAbove5pct": 0.00012152777777777777
         },
         "dragon": {
-          "pixels": 3328,
-          "mae": 0.0049265101013075685,
-          "rms": 0.006658560773674321,
-          "p95": 0.013671875,
-          "fractionAbove5pct": 0.0006009615384615385
+          "pixels": 1516,
+          "mae": 0.004651474473372765,
+          "rms": 0.006255111864628487,
+          "p95": 0.01171875,
+          "fractionAbove5pct": 0
         },
         "recentlyVacated": {
-          "pixels": 1224,
-          "mae": 0.009185570380643484,
-          "rms": 0.01367704424681831,
-          "p95": 0.03173828125,
-          "fractionAbove5pct": 0.007352941176470588
+          "pixels": 484,
+          "mae": 0.005135918684365011,
+          "rms": 0.007794389428003035,
+          "p95": 0.0185546875,
+          "fractionAbove5pct": 0
         }
       }
     },
     "frozenWindowDrift": {
       "occupied": {
         "pixels": 57600,
-        "mae": 0.0016504810637154687,
-        "rms": 0.003717609340823661,
-        "p95": 0.005859375,
-        "fractionAbove5pct": 0.00036458333333333335
+        "mae": 0.0007678220161300492,
+        "rms": 0.0010134008789605545,
+        "p95": 0.001953125,
+        "fractionAbove5pct": 0
       },
       "empty": {
         "pixels": 57600,
-        "mae": 0.0016269130555937796,
-        "rms": 0.003580410060675608,
-        "p95": 0.00537109375,
-        "fractionAbove5pct": 0.00036458333333333335
+        "mae": 0.0007611159104440104,
+        "rms": 0.0009852076446082974,
+        "p95": 0.001953125,
+        "fractionAbove5pct": 0
       },
       "earlierFrames": [
         33,
@@ -168,85 +168,189 @@
       ]
     },
     "sameSurfaceLighting": {
-      "staticSamples": 13568,
-      "aoDarkerByFivePercent": 448,
-      "sunVisibilityDarkerByTenPercent": 376,
-      "linearGIRgbL1ChangeAbovePointOne": 120,
+      "staticSamples": 14021,
+      "aoDarkerByFivePercent": 106,
+      "sunVisibilityDarkerByTenPercent": 149,
+      "linearGIRgbL1ChangeAbovePointOne": 6,
       "floor": {
-        "samples": 3006,
-        "aoDarkerByFivePercent": 438,
-        "sunDarkerByTenPercent": 376,
+        "samples": 7159,
+        "aoDarkerByFivePercent": 102,
+        "sunDarkerByTenPercent": 149,
         "shadowWorldBounds": [
-          -1.9151968955993652,
-          -0.0435108058154583,
-          5.598004341125488,
-          1.8744566440582275
+          -2.904024362564087,
+          -0.16526421904563904,
+          0.5553091168403625,
+          1.9002732038497925
         ]
       }
     },
     "ifDragonImageWereHeld": {
       "oldDragonSilhouette": {
-        "pixels": 3328,
-        "mae": 0.2988534802896369,
-        "rms": 0.3681107249344994,
-        "p95": 0.7490234375,
-        "fractionAbove5pct": 0.9119591346153846
+        "pixels": 1516,
+        "mae": 0.19245834505434717,
+        "rms": 0.21549893708657883,
+        "p95": 0.3232421875,
+        "fractionAbove5pct": 0.91688654353562
       },
       "castShadowReceivers": {
-        "pixels": 1504,
-        "mae": 0.1264860266758189,
-        "rms": 0.15930067025072728,
-        "p95": 0.30224609375,
-        "fractionAbove5pct": 0.7952127659574468
+        "pixels": 596,
+        "mae": 0.002364620067501103,
+        "rms": 0.009072390686489814,
+        "p95": 0.01318359375,
+        "fractionAbove5pct": 0.006711409395973154
       }
     },
     "removedFrameError": {
       "1": {
         "oldDragonSilhouette": {
-          "pixels": 3328,
-          "mae": 0.010210455107169737,
-          "rms": 0.015252581940953193,
-          "p95": 0.03271484375,
-          "fractionAbove5pct": 0.014122596153846154
+          "pixels": 1516,
+          "mae": 0.007717355562394682,
+          "rms": 0.012806583803499649,
+          "p95": 0.0224609375,
+          "fractionAbove5pct": 0.0079155672823219
         },
         "castShadowReceivers": {
-          "pixels": 1504,
-          "mae": 0.04411678218963092,
-          "rms": 0.053381231596565694,
-          "p95": 0.1044921875,
-          "fractionAbove5pct": 0.3304521276595745
+          "pixels": 596,
+          "mae": 0.0026768874240608387,
+          "rms": 0.004723430486323818,
+          "p95": 0.0048828125,
+          "fractionAbove5pct": 0.003355704697986577
         }
       },
       "3": {
         "oldDragonSilhouette": {
-          "pixels": 3328,
-          "mae": 0.00869420565578156,
-          "rms": 0.012942469797992838,
-          "p95": 0.02880859375,
-          "fractionAbove5pct": 0.009314903846153846
+          "pixels": 1516,
+          "mae": 0.0062784549939966594,
+          "rms": 0.009840633486028568,
+          "p95": 0.0185546875,
+          "fractionAbove5pct": 0.005936675461741424
         },
         "castShadowReceivers": {
-          "pixels": 1504,
-          "mae": 0.030441483363826224,
-          "rms": 0.0362855196189575,
-          "p95": 0.06982421875,
-          "fractionAbove5pct": 0.17420212765957446
+          "pixels": 596,
+          "mae": 0.0025562577058524175,
+          "rms": 0.003854837061433796,
+          "p95": 0.0048828125,
+          "fractionAbove5pct": 0
         }
       },
       "8": {
         "oldDragonSilhouette": {
-          "pixels": 3328,
-          "mae": 0.006379128849764526,
-          "rms": 0.009006473620240527,
-          "p95": 0.02001953125,
-          "fractionAbove5pct": 0.0006009615384615385
+          "pixels": 1516,
+          "mae": 0.004831794844283999,
+          "rms": 0.007009150539511368,
+          "p95": 0.0126953125,
+          "fractionAbove5pct": 0.0032981530343007917
         },
         "castShadowReceivers": {
-          "pixels": 1504,
-          "mae": 0.011724725365638735,
-          "rms": 0.014644089673373913,
-          "p95": 0.02978515625,
+          "pixels": 596,
+          "mae": 0.002686761113013122,
+          "rms": 0.0033335545931615198,
+          "p95": 0.0048828125,
           "fractionAbove5pct": 0
+        }
+      }
+    }
+  },
+  "mirrorReflection": {
+    "width": 704,
+    "height": 396,
+    "camera": [
+      -8.5,
+      -1.12,
+      1.4999999999999991
+    ],
+    "target": [
+      -1.9500000000000002,
+      -0.2750000000000001,
+      0
+    ],
+    "quality": "high",
+    "adapter": "swiftshader",
+    "warmup": 8,
+    "poses": {
+      "A": {
+        "mirrorHSamples": 34607,
+        "floorZ": [
+          0,
+          0
+        ],
+        "predictedVisiblePixels": 5111,
+        "inside": {
+          "pixels": 3818,
+          "meanAbsoluteRGB": 0.724869,
+          "fractionChangingMoreThanFivePercent": 0.999476,
+          "fractionGainingRedChromaAbovePointOne": 0.992142
+        },
+        "outside": {
+          "pixels": 125658,
+          "meanAbsoluteRGB": 0.00089,
+          "fractionChangingMoreThanFivePercent": 0.002682,
+          "fractionGainingRedChromaAbovePointOne": 0.0
+        },
+        "shadedInside": {
+          "pixels": 3818,
+          "meanAbsoluteRGB": 0.587256,
+          "fractionChangingMoreThanFivePercent": 0.999476,
+          "fractionGainingRedChromaAbovePointOne": 0.663436
+        },
+        "isolatedPoseOnly": {
+          "pixels": 3354,
+          "meanAbsoluteRGB": 0.722996,
+          "fractionChangingMoreThanFivePercent": 0.999404,
+          "fractionGainingRedChromaAbovePointOne": 0.991055
+        },
+        "otherPoseAtSamePlace": {
+          "pixels": 3354,
+          "meanAbsoluteRGB": 1.3e-05,
+          "fractionChangingMoreThanFivePercent": 0.0,
+          "fractionGainingRedChromaAbovePointOne": 0.0
+        },
+        "reflectedColorMaskIoU": 0.9419616947185142,
+        "offReflInside": null
+      },
+      "B": {
+        "mirrorHSamples": 34451,
+        "floorZ": [
+          0,
+          0
+        ],
+        "predictedVisiblePixels": 8338,
+        "inside": {
+          "pixels": 6733,
+          "meanAbsoluteRGB": 0.717518,
+          "fractionChangingMoreThanFivePercent": 1.0,
+          "fractionGainingRedChromaAbovePointOne": 0.970593
+        },
+        "outside": {
+          "pixels": 121955,
+          "meanAbsoluteRGB": 0.000527,
+          "fractionChangingMoreThanFivePercent": 0.002714,
+          "fractionGainingRedChromaAbovePointOne": 1.6e-05
+        },
+        "shadedInside": {
+          "pixels": 6733,
+          "meanAbsoluteRGB": 0.561002,
+          "fractionChangingMoreThanFivePercent": 1.0,
+          "fractionGainingRedChromaAbovePointOne": 0.630625
+        },
+        "isolatedPoseOnly": {
+          "pixels": 6449,
+          "meanAbsoluteRGB": 0.7153,
+          "fractionChangingMoreThanFivePercent": 1.0,
+          "fractionGainingRedChromaAbovePointOne": 0.969298
+        },
+        "otherPoseAtSamePlace": {
+          "pixels": 6449,
+          "meanAbsoluteRGB": 0.000126,
+          "fractionChangingMoreThanFivePercent": 0.0,
+          "fractionGainingRedChromaAbovePointOne": 0.0
+        },
+        "reflectedColorMaskIoU": 0.9394408090422368,
+        "offReflInside": {
+          "pixels": 6733,
+          "meanAbsoluteRGB": 0.0,
+          "fractionChangingMoreThanFivePercent": 0.0,
+          "fractionGainingRedChromaAbovePointOne": 0.0
         }
       }
     }
@@ -265,14 +369,14 @@
     ],
     "quality": "high",
     "camera": [
-      -5.9,
-      -1.1199999999999997,
-      1.65
+      -8.5,
+      -1.12,
+      1.4999999999999991
     ],
     "target": [
-      1.1,
-      0.12,
-      1.36
+      -1.9500000000000002,
+      -0.2750000000000001,
+      0
     ],
     "staticTriangles": 243645,
     "sampling": {
@@ -294,29 +398,29 @@
         "samples": 36,
         "compositeOnlyFrames": 0,
         "completedMs": {
-          "median": 480.5,
-          "p95": 1095.1999999999534,
-          "mean": 595.6666666666861
+          "median": 518.0500000007451,
+          "p95": 558.5,
+          "mean": 520.9805555557315
         },
         "passMs": {
-          "median": 476.8985815,
-          "p95": 1080.647624,
-          "mean": 591.2787784166667
+          "median": 515.5065095,
+          "p95": 556.347252,
+          "mean": 518.9433948055555
         },
         "poseMs": {
           "median": 0,
-          "p95": 0,
-          "mean": 0.002777777780364785
+          "p95": 0.09999999962747097,
+          "mean": 0.005555555534859498
         },
         "prepareMs": {
           "median": 0,
-          "p95": 0,
-          "mean": 0.00555555556072957
+          "p95": 0.09999999962747097,
+          "mean": 0.005555555534859498
         },
         "renderSubmitMs": {
-          "median": 0.5,
-          "p95": 4.099999999860302,
-          "mean": 1.0194444444496185
+          "median": 0.3999999985098839,
+          "p95": 1,
+          "mean": 0.40555555533824694
         },
         "primaryAoGiRays": {
           "median": 28800,
@@ -334,29 +438,29 @@
         "samples": 36,
         "compositeOnlyFrames": 0,
         "completedMs": {
-          "median": 961.4000000000233,
-          "p95": 1300,
-          "mean": 1003.3416666666421
+          "median": 1068.9500000001863,
+          "p95": 1520.7999999988824,
+          "mean": 1099.736111111111
         },
         "passMs": {
-          "median": 959.3320205,
-          "p95": 1297.606564,
-          "mean": 1001.0514897222224
+          "median": 1066.840847,
+          "p95": 1511.343391,
+          "mean": 1096.9461241388888
         },
         "poseMs": {
           "median": 0,
           "p95": 0,
-          "mean": 0.002777777773897267
+          "mean": 0.002777777819169892
         },
         "prepareMs": {
           "median": 0,
           "p95": 0,
-          "mean": 0.002777777773897267
+          "mean": 0.002777777819169892
         },
         "renderSubmitMs": {
-          "median": 0.4000000001396984,
-          "p95": 0.9000000001396984,
-          "mean": 0.4944444444198679
+          "median": 0.4500000001862645,
+          "p95": 1.699999999254942,
+          "mean": 0.5638888890648054
         },
         "primaryAoGiRays": {
           "median": 28800,
@@ -374,29 +478,29 @@
         "samples": 36,
         "compositeOnlyFrames": 0,
         "completedMs": {
-          "median": 1581.3499999999767,
-          "p95": 1900.3000000000466,
-          "mean": 1449.3861111110828
+          "median": 1043.199999999255,
+          "p95": 1265,
+          "mean": 1055.2611111111214
         },
         "passMs": {
-          "median": 1577.2588485,
-          "p95": 1895.903749,
-          "mean": 1445.6713857777772
+          "median": 1040.8271765,
+          "p95": 1262.981614,
+          "mean": 1052.6697001388886
         },
         "poseMs": {
-          "median": 0.09999999986030161,
-          "p95": 0.10000000009313226,
-          "mean": 0.07499999999870649
+          "median": 0.09999999962747097,
+          "p95": 0.19999999925494194,
+          "mean": 0.0777777777467337
         },
         "prepareMs": {
           "median": 0,
-          "p95": 0.10000000009313226,
-          "mean": 0.03611111113180717
+          "p95": 0.10000000149011612,
+          "mean": 0.04444444448583656
         },
         "renderSubmitMs": {
-          "median": 0.39999999990686774,
-          "p95": 1.0999999998603016,
-          "mean": 0.4611111111072306
+          "median": 0.40000000037252903,
+          "p95": 0.7999999988824129,
+          "mean": 0.45555555551416343
         },
         "primaryAoGiRays": {
           "median": 28800,
@@ -439,145 +543,145 @@
         },
         "frames": [
           {
-            "completedMs": 1095.1999999999534,
+            "completedMs": 551.6999999992549,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 4.099999999860302,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 7,
             "compositeOnly": false,
-            "passMs": 1080.647624,
+            "passMs": 549.738865,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 577,
+            "completedMs": 466.80000000074506,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 8,
+            "compositeOnly": false,
+            "passMs": 465.261985,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 549.8000000007451,
+            "poseMs": 0,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 9,
+            "compositeOnly": false,
+            "passMs": 547.919308,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 518.8999999985099,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2999999988824129,
+            "stillFrames": 10,
+            "compositeOnly": false,
+            "passMs": 517.246619,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 565.2000000011176,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000074505806,
+            "stillFrames": 11,
+            "compositeOnly": false,
+            "passMs": 563.79316,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 493.6000000014901,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2000000011175871,
+            "stillFrames": 12,
+            "compositeOnly": false,
+            "passMs": 492.172602,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 504.2999999988824,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2999999988824129,
+            "stillFrames": 13,
+            "compositeOnly": false,
+            "passMs": 503.19936,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 521.6999999992549,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.3999999985098839,
+            "stillFrames": 14,
+            "compositeOnly": false,
+            "passMs": 520.27488,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 525.7999999988824,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2999999988824129,
+            "stillFrames": 15,
+            "compositeOnly": false,
+            "passMs": 524.374669,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 508.59999999962747,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2999999988824129,
+            "stillFrames": 16,
+            "compositeOnly": false,
+            "passMs": 506.965114,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 549.9000000003725,
             "poseMs": 0,
             "prepareMs": 0,
             "renderSubmitMs": 0.5,
-            "stillFrames": 8,
-            "compositeOnly": false,
-            "passMs": 575.249056,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 499.80000000004657,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 9,
-            "compositeOnly": false,
-            "passMs": 497.739771,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 606,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 10,
-            "compositeOnly": false,
-            "passMs": 599.810874,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 851.3000000000466,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 1.5,
-            "stillFrames": 11,
-            "compositeOnly": false,
-            "passMs": 848.038668,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 932.8000000000466,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 9.900000000139698,
-            "stillFrames": 12,
-            "compositeOnly": false,
-            "passMs": 915.803067,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 794.1999999999534,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.6999999999534339,
-            "stillFrames": 13,
-            "compositeOnly": false,
-            "passMs": 791.505512,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 815.7000000001863,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 14,
-            "compositeOnly": false,
-            "passMs": 811.697466,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 785.6999999999534,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 2,
-            "stillFrames": 15,
-            "compositeOnly": false,
-            "passMs": 777.469038,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 646,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 16,
-            "compositeOnly": false,
-            "passMs": 644.456316,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 499.39999999990687,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
             "stillFrames": 17,
             "compositeOnly": false,
-            "passMs": 497.405871,
+            "passMs": 548.172531,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 515.0999999998603,
+            "completedMs": 510,
             "poseMs": 0,
             "prepareMs": 0,
             "renderSubmitMs": 0.5,
             "stillFrames": 18,
             "compositeOnly": false,
-            "passMs": 511.759274,
+            "passMs": 508.220861,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
@@ -617,145 +721,145 @@
         },
         "frames": [
           {
-            "completedMs": 959.3000000000466,
+            "completedMs": 1169.5999999996275,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "renderSubmitMs": 0.900000000372529,
             "stillFrames": 7,
             "compositeOnly": false,
-            "passMs": 957.060995,
+            "passMs": 1167.408445,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1300,
+            "completedMs": 1024.4000000003725,
             "poseMs": 0,
             "prepareMs": 0,
             "renderSubmitMs": 0.5,
             "stillFrames": 8,
             "compositeOnly": false,
-            "passMs": 1297.606564,
+            "passMs": 1022.718537,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1002.3999999999069,
+            "completedMs": 961.0999999996275,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 9,
             "compositeOnly": false,
-            "passMs": 999.654539,
+            "passMs": 959.438502,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 929.9000000001397,
+            "completedMs": 984.9000000003725,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.7000000001862645,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 10,
             "compositeOnly": false,
-            "passMs": 928.23347,
+            "passMs": 981.53203,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 910,
+            "completedMs": 1045.6000000014901,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
+            "renderSubmitMs": 0.900000000372529,
             "stillFrames": 11,
             "compositeOnly": false,
-            "passMs": 907.638377,
+            "passMs": 1040.468377,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 955.0999999998603,
+            "completedMs": 1156.5999999996275,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5999999998603016,
+            "renderSubmitMs": 2.299999998882413,
             "stillFrames": 12,
             "compositeOnly": false,
-            "passMs": 953.284311,
+            "passMs": 1150.559743,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 955.6999999999534,
+            "completedMs": 1120.9000000003725,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.8000000007450581,
+            "stillFrames": 13,
+            "compositeOnly": false,
+            "passMs": 1117.869849,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1202.5999999996275,
             "poseMs": 0,
             "prepareMs": 0,
             "renderSubmitMs": 0.5,
-            "stillFrames": 13,
-            "compositeOnly": false,
-            "passMs": 953.150265,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 936.1999999999534,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.6999999999534339,
             "stillFrames": 14,
             "compositeOnly": false,
-            "passMs": 933.735121,
+            "passMs": 1200.494397,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 940.5,
+            "completedMs": 1071.800000000745,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 15,
             "compositeOnly": false,
-            "passMs": 938.586851,
+            "passMs": 1069.846576,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1001.2999999998137,
+            "completedMs": 1128.4000000003725,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 16,
             "compositeOnly": false,
-            "passMs": 999.146011,
+            "passMs": 1125.065654,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1150.3000000000466,
+            "completedMs": 998.9000000003725,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.4000000001396984,
+            "renderSubmitMs": 0.5,
             "stillFrames": 17,
             "compositeOnly": false,
-            "passMs": 1145.40476,
+            "passMs": 996.689856,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1847.5,
+            "completedMs": 1175.9000000003725,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.9000000001396984,
+            "renderSubmitMs": 0.30000000074505806,
             "stillFrames": 18,
             "compositeOnly": false,
-            "passMs": 1844.149088,
+            "passMs": 1172.95626,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
@@ -795,145 +899,145 @@
         },
         "frames": [
           {
-            "completedMs": 1732.2999999998137,
-            "poseMs": 0.09999999986030161,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.4000000001396984,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1729.912884,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1695.1999999999534,
-            "poseMs": 0.09999999986030161,
-            "prepareMs": 0.20000000018626451,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1688.107237,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1833.1000000000931,
-            "poseMs": 0.10000000009313226,
+            "completedMs": 1061.0999999996275,
+            "poseMs": 0.09999999962747097,
             "prepareMs": 0,
             "renderSubmitMs": 0.5,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1828.484287,
+            "passMs": 1059.344889,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1991.8999999999069,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "completedMs": 1008.3000000007451,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1989.357106,
+            "passMs": 1006.051295,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1669.2000000001863,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.6999999999534339,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1667.00893,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1900.3000000000466,
-            "poseMs": 0.09999999986030161,
-            "prepareMs": 0.10000000009313226,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1895.903749,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1739.3000000000466,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0.10000000009313226,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1735.486883,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1712.5,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0.10000000009313226,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1708.305581,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1543.5,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1540.957602,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1556.6999999999534,
-            "poseMs": 0.09999999986030161,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1550.491264,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1777.1999999999534,
-            "poseMs": 0.09999999986030161,
-            "prepareMs": 0.10000000009313226,
-            "renderSubmitMs": 0.19999999995343387,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1774.327694,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1797.5999999998603,
-            "poseMs": 0,
+            "completedMs": 991,
+            "poseMs": 0.09999999962747097,
             "prepareMs": 0,
             "renderSubmitMs": 0.5,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1794.151764,
+            "passMs": 988.580513,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 936.1999999992549,
+            "poseMs": 0.19999999925494194,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.30000000074505806,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 933.58617,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1057.5,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1055.306721,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 953.7000000011176,
+            "poseMs": 0.2000000011175871,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 950.962821,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1060.0999999996275,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1057.541597,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 942.8000000007451,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 940.574208,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1018.5,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2999999988824129,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1011.077293,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 974.6999999992549,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.599999999627471,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 972.905575,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 974.1000000014901,
+            "poseMs": 0.10000000149011612,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2999999988824129,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 971.706025,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 980.6999999992549,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 978.516324,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
@@ -973,145 +1077,145 @@
         },
         "frames": [
           {
-            "completedMs": 1644,
+            "completedMs": 1014.0999999996275,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.2999999988824129,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1011.560397,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1052.699999999255,
+            "poseMs": 0,
+            "prepareMs": 0.10000000149011612,
+            "renderSubmitMs": 0.6999999992549419,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1050.157971,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1017.6000000014901,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 1.1000000000931323,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1637.363895,
+            "passMs": 1015.368984,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1707.8999999999069,
-            "poseMs": 0.09999999986030161,
-            "prepareMs": 0.09999999986030161,
-            "renderSubmitMs": 0.4000000001396984,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1700.462134,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1646.5999999998603,
-            "poseMs": 0,
-            "prepareMs": 0.09999999986030161,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1644.380737,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1516.0999999998603,
-            "poseMs": 0.09999999986030161,
+            "completedMs": 1023.7999999988824,
+            "poseMs": 0.09999999962747097,
             "prepareMs": 0,
-            "renderSubmitMs": 0.4000000001396984,
+            "renderSubmitMs": 0.7999999988824129,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1514.424163,
+            "passMs": 1021.43765,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1314.8000000000466,
-            "poseMs": 0.10000000009313226,
+            "completedMs": 1079.0999999996275,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000074505806,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1076.948551,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1191.6000000014901,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1190.177887,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1091.300000000745,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1087.703841,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 953.0999999996275,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.7999999988824129,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 949.801676,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1041,
+            "poseMs": 0,
             "prepareMs": 0,
             "renderSubmitMs": 0.5,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1312.86175,
+            "passMs": 1038.619706,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1017.5,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0.10000000009313226,
-            "renderSubmitMs": 0.5,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1015.600347,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1073,
+            "completedMs": 1006.0999999996275,
             "poseMs": 0,
+            "prepareMs": 0.10000000149011612,
+            "renderSubmitMs": 0.7000000011175871,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1003.646398,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1111.4000000003725,
+            "poseMs": 0.10000000149011612,
             "prepareMs": 0,
-            "renderSubmitMs": 0.4000000001396984,
+            "renderSubmitMs": 0.19999999925494194,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1070.735849,
+            "passMs": 1109.21579,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1188.6999999999534,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0.10000000009313226,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1186.59061,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1012.3000000000466,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0.10000000009313226,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1009.496998,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1092.6000000000931,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1090.719408,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 992.0999999998603,
-            "poseMs": 0.09999999986030161,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.4000000001396984,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 989.374165,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1753.8999999999069,
+            "completedMs": 1286.5,
             "poseMs": 0,
-            "prepareMs": 0.10000000009313226,
-            "renderSubmitMs": 0.5,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1751.588112,
+            "passMs": 1283.416558,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
@@ -1146,145 +1250,145 @@
         },
         "frames": [
           {
-            "completedMs": 479.0999999998603,
+            "completedMs": 498,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "renderSubmitMs": 0.3999999985098839,
             "stillFrames": 7,
             "compositeOnly": false,
-            "passMs": 474.463757,
+            "passMs": 495.571121,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 445.80000000004657,
+            "completedMs": 506,
             "poseMs": 0,
-            "prepareMs": 0.20000000018626451,
-            "renderSubmitMs": 1.6000000000931323,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 8,
             "compositeOnly": false,
-            "passMs": 440.958214,
+            "passMs": 504.101938,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 461,
+            "completedMs": 521.7000000011176,
             "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.2999999998137355,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.30000000074505806,
             "stillFrames": 9,
             "compositeOnly": false,
-            "passMs": 458.685969,
+            "passMs": 519.837738,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 466.80000000004657,
+            "completedMs": 558.5,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "renderSubmitMs": 0.2999999988824129,
             "stillFrames": 10,
             "compositeOnly": false,
-            "passMs": 445.045027,
+            "passMs": 556.347252,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 442,
+            "completedMs": 533.5999999996275,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5999999998603016,
+            "renderSubmitMs": 0.3999999985098839,
             "stillFrames": 11,
             "compositeOnly": false,
-            "passMs": 439.97704,
+            "passMs": 531.584986,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 467.5,
+            "completedMs": 495.40000000037253,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
+            "renderSubmitMs": 0.30000000074505806,
             "stillFrames": 12,
             "compositeOnly": false,
-            "passMs": 465.277301,
+            "passMs": 494.092466,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 449.5,
+            "completedMs": 503.7000000011176,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 13,
             "compositeOnly": false,
-            "passMs": 446.005023,
+            "passMs": 501.736706,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 459,
+            "completedMs": 508,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 1,
+            "renderSubmitMs": 0.3999999985098839,
             "stillFrames": 14,
             "compositeOnly": false,
-            "passMs": 456.37845,
+            "passMs": 506.489298,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 442.10000000009313,
+            "completedMs": 520.6999999992549,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5,
+            "renderSubmitMs": 0.2999999988824129,
             "stillFrames": 15,
             "compositeOnly": false,
-            "passMs": 439.939877,
+            "passMs": 518.652545,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 458.10000000009313,
+            "completedMs": 535.8000000007451,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.8000000000465661,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 16,
             "compositeOnly": false,
-            "passMs": 455.995988,
+            "passMs": 533.98771,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 443.0999999998603,
+            "completedMs": 506.6000000014901,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "renderSubmitMs": 0.30000000074505806,
             "stillFrames": 17,
             "compositeOnly": false,
-            "passMs": 441.169276,
+            "passMs": 505.18648,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 458.30000000004657,
+            "completedMs": 512.5,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
+            "renderSubmitMs": 0.30000000074505806,
             "stillFrames": 18,
             "compositeOnly": false,
-            "passMs": 456.486564,
+            "passMs": 509.423818,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
@@ -1324,145 +1428,145 @@
         },
         "frames": [
           {
-            "completedMs": 963.5,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.6000000000931323,
-            "stillFrames": 7,
-            "compositeOnly": false,
-            "passMs": 961.603046,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 999.0999999998603,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.2999999998137355,
-            "stillFrames": 8,
-            "compositeOnly": false,
-            "passMs": 996.792526,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 895.8000000000466,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 9,
-            "compositeOnly": false,
-            "passMs": 893.476602,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 946.1999999999534,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 10,
-            "compositeOnly": false,
-            "passMs": 944.959148,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 926.6999999999534,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 11,
-            "compositeOnly": false,
-            "passMs": 925.265589,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 932.6000000000931,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 12,
-            "compositeOnly": false,
-            "passMs": 930.86076,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 973.8000000000466,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 13,
-            "compositeOnly": false,
-            "passMs": 972.580738,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 902.3999999999069,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 14,
-            "compositeOnly": false,
-            "passMs": 900.576812,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1022.8999999999069,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 15,
-            "compositeOnly": false,
-            "passMs": 1020.644863,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1035.6999999999534,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.4000000001396984,
-            "stillFrames": 16,
-            "compositeOnly": false,
-            "passMs": 1033.720023,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1009.3999999999069,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 1.1999999999534339,
-            "stillFrames": 17,
-            "compositeOnly": false,
-            "passMs": 1006.733346,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 929.6000000000931,
+            "completedMs": 1066.0999999996275,
             "poseMs": 0,
             "prepareMs": 0,
             "renderSubmitMs": 0.5,
+            "stillFrames": 7,
+            "compositeOnly": false,
+            "passMs": 1063.835118,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 956.2999999988824,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 8,
+            "compositeOnly": false,
+            "passMs": 953.104103,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 961.5,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2999999988824129,
+            "stillFrames": 9,
+            "compositeOnly": false,
+            "passMs": 959.052502,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1004.8000000007451,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 10,
+            "compositeOnly": false,
+            "passMs": 1002.056494,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1085.699999999255,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 11,
+            "compositeOnly": false,
+            "passMs": 1083.530692,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1012.9000000003725,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000074505806,
+            "stillFrames": 12,
+            "compositeOnly": false,
+            "passMs": 1011.248491,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 995.1999999992549,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 13,
+            "compositeOnly": false,
+            "passMs": 993.059961,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1011.7000000011176,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 14,
+            "compositeOnly": false,
+            "passMs": 1008.651307,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 975.1999999992549,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 15,
+            "compositeOnly": false,
+            "passMs": 972.875837,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1054.5,
+            "poseMs": 0.10000000149011612,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 16,
+            "compositeOnly": false,
+            "passMs": 1052.774664,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 988.0999999996275,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 17,
+            "compositeOnly": false,
+            "passMs": 985.866048,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1093,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.6000000014901161,
             "stillFrames": 18,
             "compositeOnly": false,
-            "passMs": 927.78956,
+            "passMs": 1091.326649,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
@@ -1502,145 +1606,145 @@
         },
         "frames": [
           {
-            "completedMs": 975.6999999999534,
+            "completedMs": 1520.7999999988824,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.2999999998137355,
+            "renderSubmitMs": 1.699999999254942,
             "stillFrames": 7,
             "compositeOnly": false,
-            "passMs": 974.181678,
+            "passMs": 1511.343391,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 937,
+            "completedMs": 1356,
             "poseMs": 0,
-            "prepareMs": 0.09999999986030161,
-            "renderSubmitMs": 0.39999999990686774,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
             "stillFrames": 8,
             "compositeOnly": false,
-            "passMs": 934.773306,
+            "passMs": 1353.173389,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 909.8000000000466,
+            "completedMs": 1100.1000000014901,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.6000000000931323,
+            "renderSubmitMs": 0.7000000011175871,
             "stillFrames": 9,
             "compositeOnly": false,
-            "passMs": 907.060712,
+            "passMs": 1097.92472,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 973.8999999999069,
+            "completedMs": 1085,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5,
+            "renderSubmitMs": 0.599999999627471,
             "stillFrames": 10,
             "compositeOnly": false,
-            "passMs": 972.026588,
+            "passMs": 1082.594475,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 971.5,
+            "completedMs": 1143,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 11,
             "compositeOnly": false,
-            "passMs": 968.852242,
+            "passMs": 1140.795777,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 936.3999999999069,
+            "completedMs": 1077.0999999996275,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5999999998603016,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 12,
             "compositeOnly": false,
-            "passMs": 934.346976,
+            "passMs": 1074.73785,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 997.8000000000466,
+            "completedMs": 1044.300000000745,
             "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "prepareMs": 0.10000000149011612,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 13,
             "compositeOnly": false,
-            "passMs": 995.349684,
+            "passMs": 1042.222495,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 951.6000000000931,
+            "completedMs": 978.1999999992549,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5,
+            "renderSubmitMs": 0.2999999988824129,
             "stillFrames": 14,
             "compositeOnly": false,
-            "passMs": 947.566632,
+            "passMs": 975.298843,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 918.8999999999069,
-            "poseMs": 0.09999999986030161,
+            "completedMs": 1311.7000000011176,
+            "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.8000000000465661,
+            "renderSubmitMs": 0.30000000074505806,
             "stillFrames": 15,
             "compositeOnly": false,
-            "passMs": 916.210005,
+            "passMs": 1309.154951,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1101.5999999998603,
+            "completedMs": 1620.199999999255,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 16,
             "compositeOnly": false,
-            "passMs": 1099.516735,
+            "passMs": 1615.925187,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1038.8000000000466,
+            "completedMs": 1004.3999999985099,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5,
+            "renderSubmitMs": 0.599999999627471,
             "stillFrames": 17,
             "compositeOnly": false,
-            "passMs": 1036.24701,
+            "passMs": 1002.096423,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 981.3999999999069,
+            "completedMs": 1104,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5999999998603016,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 18,
             "compositeOnly": false,
-            "passMs": 979.068697,
+            "passMs": 1102.362876,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
@@ -1680,145 +1784,145 @@
         },
         "frames": [
           {
-            "completedMs": 975.6999999999534,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "completedMs": 1264.9000000003725,
+            "poseMs": 0.10000000149011612,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.6999999992549419,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 972.943367,
+            "passMs": 1261.845572,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1107.3000000000466,
+            "completedMs": 1265,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1262.981614,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1147,
+            "poseMs": 0.10000000149011612,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2999999988824129,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1144.311115,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1144.800000000745,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1142.875066,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1083.0999999996275,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.30000000074505806,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1081.43392,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1103.5999999996275,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.8999999999068677,
+            "renderSubmitMs": 0.2999999988824129,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1096.350744,
+            "passMs": 1101.302409,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1126.4000000001397,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "completedMs": 1071.300000000745,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0.10000000149011612,
+            "renderSubmitMs": 0.6000000014901161,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1124.077089,
+            "passMs": 1069.305228,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1168.8000000000466,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1166.867025,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 926,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 923.53089,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1023.5,
+            "completedMs": 994.5999999996275,
             "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 992.292072,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1045.3999999985099,
+            "poseMs": 0.09999999962747097,
             "prepareMs": 0,
             "renderSubmitMs": 0.5,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1020.645436,
+            "passMs": 1043.034647,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1084.3999999999069,
-            "poseMs": 0.10000000009313226,
-            "prepareMs": 0.10000000009313226,
-            "renderSubmitMs": 1.0999999998603016,
+            "completedMs": 1050.2999999988824,
+            "poseMs": 0.19999999925494194,
+            "prepareMs": 0.09999999962747097,
+            "renderSubmitMs": 0.6999999992549419,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1081.763757,
+            "passMs": 1046.844706,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1158.5999999998603,
+            "completedMs": 995.9000000003725,
+            "poseMs": 0.09999999962747097,
+            "prepareMs": 0.10000000149011612,
+            "renderSubmitMs": 0.40000000037252903,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 993.826865,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 996.5,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "renderSubmitMs": 0.30000000074505806,
             "stillFrames": 0,
             "compositeOnly": false,
-            "passMs": 1153.293488,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1752.1999999999534,
-            "poseMs": 0.09999999986030161,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.6000000000931323,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1742.261961,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1668.7999999998137,
-            "poseMs": 0.19999999995343387,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.30000000004656613,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1662.997127,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1671.8999999999069,
-            "poseMs": 0,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1669.319422,
-            "tracedPixels": 14400,
-            "cachedPixels": 0,
-            "primaryAoGiRays": 28800
-          },
-          {
-            "completedMs": 1606,
-            "poseMs": 0.09999999986030161,
-            "prepareMs": 0,
-            "renderSubmitMs": 0.4000000001396984,
-            "stillFrames": 0,
-            "compositeOnly": false,
-            "passMs": 1604.026433,
+            "passMs": 991.847151,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
@@ -1853,145 +1957,145 @@
         },
         "frames": [
           {
-            "completedMs": 918.2000000001863,
-            "poseMs": 0.10000000009313226,
+            "completedMs": 514.4000000003725,
+            "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.8999999999068677,
+            "renderSubmitMs": 0.599999999627471,
             "stillFrames": 7,
             "compositeOnly": false,
-            "passMs": 914.957242,
+            "passMs": 511.597986,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 967.5999999998603,
-            "poseMs": 0,
+            "completedMs": 535.5,
+            "poseMs": 0.09999999962747097,
             "prepareMs": 0,
-            "renderSubmitMs": 0.39999999990686774,
+            "renderSubmitMs": 0.2999999988824129,
             "stillFrames": 8,
             "compositeOnly": false,
-            "passMs": 962.625623,
+            "passMs": 533.453037,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 1162,
+            "completedMs": 515.1000000014901,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.6000000000931323,
+            "renderSubmitMs": 0.5,
             "stillFrames": 9,
             "compositeOnly": false,
-            "passMs": 1153.713485,
+            "passMs": 513.17126,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 591.7000000001863,
+            "completedMs": 507.6000000014901,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 2.4000000001396984,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 10,
             "compositeOnly": false,
-            "passMs": 587.718663,
+            "passMs": 505.817417,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 438.80000000004657,
+            "completedMs": 516.5,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.6000000000931323,
+            "renderSubmitMs": 0.3999999985098839,
             "stillFrames": 11,
             "compositeOnly": false,
-            "passMs": 436.850833,
+            "passMs": 514.776325,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 462.20000000018626,
+            "completedMs": 512.5999999996275,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.4000000001396984,
+            "renderSubmitMs": 0.30000000074505806,
             "stillFrames": 12,
             "compositeOnly": false,
-            "passMs": 459.32237,
+            "passMs": 510.942171,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 508.80000000004657,
+            "completedMs": 517.9000000003725,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.6999999999534339,
+            "renderSubmitMs": 1,
             "stillFrames": 13,
             "compositeOnly": false,
-            "passMs": 505.718972,
+            "passMs": 515.744054,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 476.9000000001397,
+            "completedMs": 529.4000000003725,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.9000000001396984,
+            "renderSubmitMs": 1.099999999627471,
             "stillFrames": 14,
             "compositeOnly": false,
-            "passMs": 474.439168,
+            "passMs": 525.858688,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 481.9000000001397,
+            "completedMs": 518.2000000011176,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.6000000000931323,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 15,
             "compositeOnly": false,
-            "passMs": 479.333406,
+            "passMs": 515.268965,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 431.89999999990687,
+            "completedMs": 548.7999999988824,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5,
+            "renderSubmitMs": 0.2999999988824129,
             "stillFrames": 16,
             "compositeOnly": false,
-            "passMs": 429.980372,
+            "passMs": 546.560283,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 464.10000000009313,
+            "completedMs": 537.0999999996275,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 17,
             "compositeOnly": false,
-            "passMs": 462.670134,
+            "passMs": 535.219877,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
           },
           {
-            "completedMs": 449.39999999990687,
+            "completedMs": 535.4000000003725,
             "poseMs": 0,
             "prepareMs": 0,
-            "renderSubmitMs": 0.5,
+            "renderSubmitMs": 0.40000000037252903,
             "stillFrames": 18,
             "compositeOnly": false,
-            "passMs": 446.740732,
+            "passMs": 529.200138,
             "tracedPixels": 14400,
             "cachedPixels": 0,
             "primaryAoGiRays": 28800
@@ -2185,9 +2289,9 @@
     "compressed_sha256": "cecd0a6f5cca6cd18fabd2f9c4623a964f4785c6170f3349f36742987bf20298"
   },
   "assetSHA256": {
-    "sponza-mesh.bin.gz": "f8d3461f7baebf5744eccb9aa5fca9fb4110e6fca259cdd973e830d082e7f81d",
+    "sponza-mesh.bin.gz": "c1f059f3488726b093488ad42a4f81ad4813027038dce6348b810dc64d30779e",
     "red-dragon-mesh.bin.gz": "af590fc1e70917919e5d31c7c3b1f00a3d3e29816ae0e50cde311345c3a9039a",
     "sponza.f16.gz": "cecd0a6f5cca6cd18fabd2f9c4623a964f4785c6170f3349f36742987bf20298",
-    "scene.js": "af8b21fc9bbcb3a8bf39d4be05263de2ca28cf777a630c7a8012d0b105fd913d"
+    "scene.js": "565aa7f2717c69f9eb9d3d60dfe1462c4e5ea208337be6db2b935f31f8372195"
   }
 }
