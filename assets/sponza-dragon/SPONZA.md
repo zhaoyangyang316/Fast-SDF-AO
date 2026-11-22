@@ -4,7 +4,13 @@ This mesh depicts the Atrium of the Sponza Palace in Dubrovnik. Frank Meinl remo
 
 Fast-SDF-AO’s adaptation uses meters and a Z-up coordinate system. The ground-floor center is at the origin and the long nave runs along X. The conversion triangulates the OBJ, samples its diffuse textures into linear vertex colors, subdivides broad masonry and floor surfaces, and reduces tessellation on dense cloth and architectural details. The opaque renderer omits the opacity-masked foliage and chain cards. Surface roughness values are assigned for the renderer. The static mesh and its derived distance field carry the source attribution.
 
-The demo gives the OBJ’s `floor` material a polished metal finish to show the moving dragon in the courtyard. Its signed roughness is stored as −5/127, which enables the full-resolution mirror trace. The original floor colors tint the reflection.
+The OBJ’s `floor` material covers two levels. There are 11,248 upward-facing triangles at ground level (`z = 0`) and 7,744 on the upper walkway (`z ≈ 4.18 m`). Both use the original vertex colors and a signed roughness of −5/127. This encodes a smooth conductor whose reflections are tinted by the floor color. Turning off reflections leaves only the direct specular lighting on this material.
+
+The WebGPU preset passes `planarReflectionZ: 0` to `loadScene` for the courtyard mirror. A camera reflected across this plane rasterizes the static architecture. Each output pixel stores the nearest static surface’s radiance and distance from the reflected camera. This distance limits the reflection ray’s search for a closer hit on the dragon’s BVH. The upper walkway follows the existing smooth-conductor reflection path at its own height.
+
+The previous ground-floor reflection traced Sponza’s 12.5 cm distance field for static hits. If a hit matched a surface visible in the main camera, its color came from the G-buffer. Other hits used the coarse radiance volume, and misses returned sky lighting. This produced gaps and streaks along columns and banners even when the reflected dragon silhouette was accurate.
+
+The planar mirror gives those static surfaces triangle silhouettes and vertex colors at output resolution. It shows one reflection bounce. For lighting, it reuses AO, GI and shadow values where the reflected surface matches a surface in the main view. For offscreen surfaces it estimates visibility from the static distance field and indirect light from the radiance volume. Shadows and indirect lighting on those surfaces therefore have coarser detail than their outlines.
 
 To regenerate the compact mesh, download the source ZIP above (SHA-256 `da005cbee0be2df2abc8513f3ceb61bcb6f69aac112babcd9c00169a27c2770c`) and run this from the repository root with Python, NumPy and Pillow installed.
 

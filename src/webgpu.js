@@ -7,6 +7,7 @@
 // - Live In-Browser WebGPU Compute Exact-BVH SDF Baker (pack2x16float -> r16float 3D texture)
 
 import { RigidMeshScene } from './webgpu-rigid.js';
+import { PlanarReflectionPass } from './webgpu-planar.js';
 import { DYNAMIC_SHAPES_WGSL } from './webgpu-dynamic.js';
 import { bakeSDFOnGPU } from './webgpu-bake.js';
 import { REFL_TRACE_WGSL, REFL_FILTER_WGSL, reflectionTraceWGSL, rigidRadianceWGSL } from './webgpu-refl.js';
@@ -1338,6 +1339,7 @@ struct CompU {
   sdfInvSpan: vec4<f32>,  // xyz=sdfInvSpan, w=useReflections(0/1)
   dynPosRad: array<vec4<f32>, 4>,
   dynColRough: array<vec4<f32>, 4>,
+  planar: vec4<f32>,      // x=mirror elevation, y=static planar mirror enabled
 };
 @group(0) @binding(0) var<uniform> u: CompU;
 @group(0) @binding(1) var aoGITex: texture_2d<f32>;
@@ -1349,6 +1351,7 @@ struct CompU {
 @group(0) @binding(7) var radVol: texture_3d<f32>;
 @group(0) @binding(8) var gAlbedoRough: texture_2d<f32>;
 @group(0) @binding(9) var linSamp: sampler;
+@group(0) @binding(10) var planarRadianceDepth: texture_2d<f32>;
 
 struct VIn {
   @location(0) pos: vec3<f32>,
@@ -1364,6 +1367,7 @@ struct VOut {
   @location(0) wPos: vec3<f32>,
   @location(1) wNor: vec3<f32>,
   @location(2) colRough: vec4<f32>,
+  @location(3) @interpolate(flat) staticSurface: u32,
 };
 fn projectVertex(v: VIn) -> VOut {
   var o: VOut;
@@ -1373,7 +1377,11 @@ fn projectVertex(v: VIn) -> VOut {
   o.colRough = v.colRough;
   return o;
 }
-@vertex fn vs(v: VIn) -> VOut { return projectVertex(v); }
+@vertex fn vs(v: VIn) -> VOut {
+  var o = projectVertex(v);
+  o.staticSurface = 1u;
+  return o;
+}
 @vertex fn vsDyn(v: DynVIn, @builtin(instance_index) inst: u32) -> VOut {
   var o: VOut;
   let pr = u.dynPosRad[inst];
@@ -1428,6 +1436,89 @@ fn compSampleRad(p: vec3<f32>) -> vec3<f32> {
   let uv = (p - u.sdfMin.xyz) * u.sdfInvSpan.xyz;
   if (any(uv < vec3<f32>(0.0)) || any(uv > vec3<f32>(1.0))) { return vec3<f32>(0.0); }
   return textureSampleLevel(radVol, linSamp, uv, 0.0).rgb * u.sdfMin.w;
+}
+
+fn diffuseRadiance(p: vec3<f32>, n: vec3<f32>, alb: vec3<f32>, gi: vec3<f32>, ao: f32,
+                   sunSh: f32, orbSh: f32) -> vec3<f32> {
+  let env = mix(vec3<f32>(0.30, 0.27, 0.24), vec3<f32>(0.68, 0.79, 0.96), n.z * 0.5 + 0.5);
+  let sun = max(dot(n, normalize(u.sunDir.xyz)), 0.0);
+  var light = vec3<f32>(2.25, 2.10, 1.85) * sun * sunSh + gi + env * multiBounceAO(ao, alb) * 0.16;
+  if (dot(u.emissiveCol.rgb, u.emissiveCol.rgb) > 1e-4) {
+    let toOrb = u.emissivePos.xyz - p;
+    let d2 = dot(toOrb, toOrb);
+    let dist = sqrt(d2);
+    let nl = max(dot(n, toOrb / max(dist, 1e-4)), 0.0);
+    if (nl > 0.001 && dist < 7.5) { light += u.emissiveCol.rgb * (2.6 * nl * orbSh / (0.28 + d2)); }
+  }
+  return alb * light;
+}
+
+${rigid ? `fn planarRigidRadiance(hit: RigidHit, hitP: vec3<f32>, ray: vec3<f32>) -> vec3<f32> {
+  // Matte materials have view-independent radiance. Reuse primary lighting
+  // only if the G-buffer contains the same rigid surface with matching normals.
+  let n = faceForward(hit.normal, ray, hit.geometricNormal);
+  let clip = u.viewProj * vec4<f32>(hitP, 1.0);
+  if (hit.roughness >= 0.72 && clip.w > 0.0 && all(abs(clip.xy) < vec2<f32>(clip.w))) {
+    let uv = clip.xy / clip.w * vec2<f32>(0.5, -0.5) + 0.5;
+    let first = vec2<i32>(floor(uv * u.screen.zw - 0.5));
+    let tolerance = clamp(1.5 * clip.w / u.screen.w, 0.012, 0.06);
+    var best = tolerance;
+    var bestPixel = vec2<i32>(-1);
+    for (var i = 0; i < 4; i++) {
+      let q = first + vec2<i32>(i & 1, i >> 1);
+      if (any(q < vec2<i32>(0)) || any(q >= vec2<i32>(u.screen.zw))) { continue; }
+      let gn = textureLoad(gNormal, q, 0);
+      if (gn.w != 1.25 || dot(n, gn.xyz) < 0.90) { continue; }
+      let gp = textureLoad(gPosDepth, q, 0);
+      let delta = gp.xyz - hitP;
+      let dist = length(delta);
+      if (gp.w <= 0.0 || dist >= best || abs(dot(n, delta)) > 0.005) { continue; }
+      let albedo = textureLoad(gAlbedoRough, q, 0).rgb;
+      if (any(abs(albedo - hit.color) > vec3<f32>(0.045))) { continue; }
+      best = dist;
+      bestPixel = q;
+    }
+    if (bestPixel.x >= 0) {
+      let ag = textureLoad(aoGITex, bestPixel, 0);
+      let mt = textureLoad(metaTex, bestPixel, 0);
+      return diffuseRadiance(hitP, n, hit.color, ag.rgb, clamp(ag.a, 0.0, 1.0), mt.x, mt.y);
+    }
+  }
+  return rigidRadiance(hit, hitP, ray, u.sunDir.xyz, u.emissivePos, u.emissiveCol.rgb);
+}` : ''}
+
+fn tracePlanarMirror(pixel: vec2<i32>, view: vec3<f32>) -> vec3<f32> {
+  let plate = textureLoad(planarRadianceDepth, pixel, 0);
+  let toPlane = (u.eye.z - u.planar.x) / view.z;
+  let origin = u.eye.xyz - view * toPlane;
+  let ray = vec3<f32>(-view.xy, view.z);
+  // The reflected eye, plane hit and triangle lie on the same line. Convert
+  // the plate's eye distance to distance from the floor before comparing hits.
+  var limit = select(1e20, max(0.0, plate.a - toPlane), plate.a > 0.0);
+  var color = plate.rgb;
+  if (dot(u.emissiveCol.rgb, u.emissiveCol.rgb) > 1e-4 && u.emissivePos.w > 0.0) {
+    let t = moverRayEntry(origin, ray, u.emissivePos);
+    if (t > 0.0005 && t < limit) {
+      color = u.emissiveCol.rgb * 1.9;
+      limit = t;
+    }
+  }
+  for (var i = 0u; i < 4u; i++) {
+    let shape = u.dynPosRad[i];
+    if (shape.w == 0.0) { continue; }
+    let t = moverRayEntry(origin, ray, shape);
+    if (t > 0.0005 && t < limit) {
+      let hitP = origin + ray * t;
+      let normal = moverNormal(hitP, shape);
+      let sky = mix(vec3<f32>(0.25, 0.23, 0.21), vec3<f32>(0.68, 0.79, 0.96), normal.z * 0.5 + 0.5);
+      let sun = max(0.0, dot(normal, normalize(u.sunDir.xyz)));
+      color = u.dynColRough[i].rgb * (vec3<f32>(2.25, 2.10, 1.85) * sun + sky * 0.45);
+      limit = t;
+    }
+  }
+  ${rigid ? `let hit = rigidClosestHit(origin, ray, 0.0005, limit);
+  if (hit.valid != 0u) { return planarRigidRadiance(hit, origin + ray * hit.t, ray); }` : ''}
+  return color;
 }
 
 // Trace mirror conductors at the output resolution. Cost scales with their visible area.
@@ -1552,6 +1643,8 @@ fn traceMirrorFullRes(p: vec3<f32>, n: vec3<f32>, V: vec3<f32>) -> vec3<f32> {
   var agSum = vec4<f32>(0.0);
   var mSum = vec4<f32>(0.0);
   var rSum = vec4<f32>(0.0);
+  var reflWeight = 0.0;
+  var bestReflScore = 1e9;
   var wSum = 0.0;
   var bestAG = vec4<f32>(0.0, 0.0, 0.0, 1.0);
   var bestM = vec4<f32>(1.0, 1.0, 1.0, 0.0);
@@ -1572,29 +1665,24 @@ fn traceMirrorFullRes(p: vec3<f32>, n: vec3<f32>, V: vec3<f32>) -> vec3<f32> {
     let mt = textureLoad(metaTex, q, 0);
     let rf = textureLoad(reflTex, q, 0);
     let score = pDist + (1.0 - max(dn, 0.0)) * 0.5;
-    if (score < bestScore) { bestScore = score; bestAG = ag; bestM = mt; bestR = rf; }
+    if (score < bestScore) { bestScore = score; bestAG = ag; bestM = mt; }
+    let hasReflection = rf.w >= -1.5;
+    if (hasReflection && score < bestReflScore) { bestReflScore = score; bestR = rf; }
     if (dn >= 0.88 && pDist <= planeTol) {
       agSum += ag * bw;
       mSum += mt * bw;
-      rSum += rf * bw;
+      if (hasReflection) { rSum += rf * bw; reflWeight += bw; }
       wSum += bw;
     }
   }
   let ag = select(bestAG, agSum / wSum, wSum > 0.01);
   let mt = select(bestM, mSum / wSum, wSum > 0.01);
-  let rf = select(bestR, rSum / wSum, wSum > 0.01);
+  let rf = select(bestR, rSum / max(reflWeight, 1e-6), reflWeight > 0.01);
   let gi = ag.rgb;
   let ao = clamp(ag.a, 0.0, 1.0);
   let sunSh = mt.x;
   let orbSh = mt.y;
   let hashHit = mt.w;
-
-  let V = normalize(u.eye.xyz - p);
-  let NoV = max(dot(n, V), 1e-3);
-  var reflRGB = rf.rgb;
-  if (u.sdfInvSpan.w > 0.5 && isMetal > 0.5 && rough <= 0.08) {
-    reflRGB = traceMirrorFullRes(p, n, V);
-  }
 
   let mode = i32(round(u.emissiveCol.w));
   if (mode == 1) { return vec4<f32>(vec3<f32>(ao), 1.0); }
@@ -1603,6 +1691,19 @@ fn traceMirrorFullRes(p: vec3<f32>, n: vec3<f32>, V: vec3<f32>) -> vec3<f32> {
     let dbg = mix(vec3<f32>(0.90, 0.20, 0.65), vec3<f32>(0.12, 0.85, 0.52), hashHit);
     return vec4<f32>(linearToSrgb(dbg * (0.35 + 0.65 * ao)), 1.0);
   }
+
+  let V = normalize(u.eye.xyz - p);
+  let NoV = max(dot(n, V), 1e-3);
+  var reflRGB = rf.rgb;
+  if (u.sdfInvSpan.w > 0.5 && isMetal > 0.5 && rough <= 0.08) {
+    if (u.planar.y > 0.5 && i.staticSurface != 0u && abs(p.z - u.planar.x) <= 0.001 && n.z > 0.999
+        && u.eye.z > u.planar.x && V.z > 0.00001) {
+      reflRGB = tracePlanarMirror(vec2<i32>(i.clip.xy), V);
+    } else {
+      reflRGB = traceMirrorFullRes(p, n, V);
+    }
+  }
+
   if (mode == 4) {
     return vec4<f32>(linearToSrgb(acesToneMap(reflRGB * 1.1)), 1.0);
   }
@@ -1616,12 +1717,7 @@ fn traceMirrorFullRes(p: vec3<f32>, n: vec3<f32>, V: vec3<f32>) -> vec3<f32> {
   }
 
   // PBR + Multi-Bounce GI + Real-Time Glossy SDF Reflections + Chrome Conductor + Dynamic Emissive Orb
-  let mbAO = multiBounceAO(ao, alb);
-  let skyCol = vec3<f32>(0.68, 0.79, 0.96);
-  let gndCol = vec3<f32>(0.30, 0.27, 0.24);
-  let ambEnv = mix(gndCol, skyCol, n.z * 0.5 + 0.5);
-  let diffWeight = 1.0 - isMetal;
-  var color = alb * diffWeight * (vec3<f32>(2.25, 2.10, 1.85) * sun * sunSh + gi + ambEnv * mbAO * 0.16);
+  var color = (1.0 - isMetal) * diffuseRadiance(p, n, alb, gi, ao, sunSh, orbSh);
 
   // Fresnel + GTSO specular occlusion glossy reflection blend (conductor F0 = albedo for chrome)
   if (rough < 0.72 || isMetal > 0.5) {
@@ -1644,17 +1740,6 @@ fn traceMirrorFullRes(p: vec3<f32>, n: vec3<f32>, V: vec3<f32>) -> vec3<f32> {
     }
   }
 
-  if (dot(u.emissiveCol.rgb, u.emissiveCol.rgb) > 1e-4) {
-    let toO = u.emissivePos.xyz - p;
-    let d2 = dot(toO, toO);
-    let dist = sqrt(d2);
-    let lDir = toO / max(dist, 1e-4);
-    let ndlO = max(0.0, dot(n, lDir));
-    if (ndlO > 0.001 && dist < 7.5) {
-      let att = 1.0 / (0.28 + d2);
-      color += alb * diffWeight * u.emissiveCol.rgb * (2.6 * att * ndlO * orbSh);
-    }
-  }
   // Spatio-temporal triangular-PDF IGN dithering eliminates 8-bit swapchain banding on smooth walls
   let fOff = vec2<f32>(f32(u32(u.eye.w) & 63u)) * vec2<f32>(5.588238, 11.17647);
   let triDither = (ignComp(i.clip.xy + fOff) + ignComp(i.clip.xy + fOff + vec2<f32>(17.0, 31.0)) - 1.0) * (1.25 / 255.0);
@@ -1892,7 +1977,7 @@ function createSceneLayouts(device) {
     raster: layout(VERTEX, [uniform]),
     trace: layout(COMPUTE, [uniform, tex, tex, volume, volume, sampler, storage, storage, storage, writable, output, output, writable, tex, tex]),
     reflect: layout(COMPUTE, [uniform, tex, tex, tex, volume, volume, sampler, storage, storage, storage, tex, tex, output]),
-    composite: layout(FRAGMENT, [{ ...uniform, visibility: VERTEX | FRAGMENT }, tex, tex, tex, tex, tex, volume, volume, tex, sampler]),
+    composite: layout(FRAGMENT, [{ ...uniform, visibility: VERTEX | FRAGMENT }, tex, tex, tex, tex, tex, volume, volume, tex, sampler, tex]),
     rigid: layout(COMPUTE | VERTEX | FRAGMENT, [storage, storage, storage]),
   };
 }
@@ -2154,7 +2239,7 @@ export class WebGPUFastSDFAO {
     this.denoiseUBuf1 = d.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     this.denoiseUBuf2 = d.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     this.denoiseUBuf3 = d.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-    this.compUBuf = d.createBuffer({ size: 304, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    this.compUBuf = d.createBuffer({ size: 320, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
     this.radVolA = d.createTexture({ size: RAD_DIMS, dimension: '3d', format: 'rgba8unorm', usage: rw });
     this.radVolB = d.createTexture({ size: RAD_DIMS, dimension: '3d', format: 'rgba8unorm', usage: rw });
@@ -2172,8 +2257,9 @@ export class WebGPUFastSDFAO {
     return bakeSDFOnGPU(this.device, globalBvh, opts);
   }
 
-  loadScene({ positions, normals, colors, roughness = null, indices, sdfHalf = null, sdfTex: gpuSdfTex = null, sdfDims, sdfMin, sdfSpan, bvh, contactRange = 0.24, useGI = true }) {
+  loadScene({ positions, normals, colors, roughness = null, indices, sdfHalf = null, sdfTex: gpuSdfTex = null, sdfDims, sdfMin, sdfSpan, bvh, contactRange = 0.24, useGI = true, planarReflectionZ = null }) {
     const d = this.device;
+    if (planarReflectionZ !== null && !Number.isFinite(planarReflectionZ)) throw new TypeError('Expected a finite planar reflection height');
     if (this.sceneRes) {
       this.rigidMeshes.clear();
       this.rigidBG = null;
@@ -2186,6 +2272,7 @@ export class WebGPUFastSDFAO {
       this.sceneRes.bvhNodes.destroy();
       this.sceneRes.bvhTris.destroy();
       this.sceneRes.bvhGrid.destroy();
+      this.sceneRes.planarReflection?.destroy();
     }
 
     const vCount = positions.length / 3;
@@ -2269,6 +2356,9 @@ export class WebGPUFastSDFAO {
       nodeCount: bvh.nodes,
       rootMin: [rootMin.x, rootMin.y, rootMin.z],
       rootSpan: [rootSpan.x, rootSpan.y, rootSpan.z],
+      planarReflectionZ,
+      planarReflection: planarReflectionZ === null ? null : new PlanarReflectionPass(d, this.width, this.height, planarReflectionZ),
+      planarReflectionReady: false,
     };
     this.useGI = useGI;
     this._rebuildBindGroups();
@@ -2421,6 +2511,7 @@ export class WebGPUFastSDFAO {
         { binding: 7, resource: this.radVolB.createView() },
         { binding: 8, resource: this.gAlbedo.createView() },
         { binding: 9, resource: this.linSamp },
+        { binding: 10, resource: s.planarReflection?.view ?? this.histRefl[pIdx].createView() },
       ],
     });
     this.compBGHist = [makeCompBG(this.histAOGI[0], 0), makeCompBG(this.histAOGI[1], 1)];
@@ -2519,6 +2610,9 @@ export class WebGPUFastSDFAO {
     }
 
     const hasOrb = (this.emissiveCol[0] + this.emissiveCol[1] + this.emissiveCol[2]) > 1e-3;
+    const usePlanar = s.planarReflection !== null && eye[2] > s.planarReflectionZ && this.useGI && this.useReflections
+      && (this.viewMode === 0 || this.viewMode === 4);
+    if (!usePlanar) s.planarReflectionReady = false;
     this.stillFrames = (camSame && !hasDyn && !hasOrb && !this._rigidMotion) ? (this.stillFrames + 1) : 0;
     const traceShadows = !camSame || hasDyn || hasOrb || this.stillFrames < 28;
     const traceRefl = this.useGI && this.useReflections && (!camSame || hasDyn || hasOrb || this.stillFrames < 46);
@@ -2559,7 +2653,7 @@ export class WebGPUFastSDFAO {
     const rBuf = new ArrayBuffer(384);
     const rf = new Float32Array(rBuf), ru = new Uint32Array(rBuf);
     rf.set(vp, 0);
-    rf.set([s.sdfMin[0], s.sdfMin[1], s.sdfMin[2], 0], 16);
+    rf.set([s.sdfMin[0], s.sdfMin[1], s.sdfMin[2], s.planarReflectionZ ?? 0], 16);
     rf.set([1 / s.sdfSpan[0], 1 / s.sdfSpan[1], 1 / s.sdfSpan[2], 0], 20);
     rf.set([s.gridMin[0], s.gridMin[1], s.gridMin[2], s.gridSize], 24);
     rf.set([s.gridDims[0], s.gridDims[1], s.gridDims[2], s.contactRange], 28);
@@ -2570,7 +2664,7 @@ export class WebGPUFastSDFAO {
     rf.set([this.aoW, this.aoH, q.reflRoughCut, 10.0], 48);
     rf.set([s.rootMin[0], s.rootMin[1], s.rootMin[2], 0], 52);
     rf.set([s.rootSpan[0], s.rootSpan[1], s.rootSpan[2], 0], 56);
-    const reflFlags = (q.reflChecker && !this._rigidMotion ? 1 : 0) | (q.reflUseBvh ? 2 : 0) | (hasDyn ? 4 : 0);
+    const reflFlags = (q.reflChecker && !this._rigidMotion ? 1 : 0) | (q.reflUseBvh ? 2 : 0) | (hasDyn ? 4 : 0) | (usePlanar ? 8 : 0);
     ru.set([s.nodeCount, (this.useGI && this.useReflections) ? 1 : 0, reflFlags, q.reflSteps], 60);
     rf.set(dynPR, 64);
     rf.set(dynCR, 80);
@@ -2597,7 +2691,7 @@ export class WebGPUFastSDFAO {
     d.queue.writeBuffer(this.denoiseUBuf2, 0, new Uint32Array([this.aoW, this.aoH, 2, 0]));
     d.queue.writeBuffer(this.denoiseUBuf3, 0, new Uint32Array([this.aoW, this.aoH, 4, 0]));
 
-    const cBuf = new Float32Array(76);
+    const cBuf = new Float32Array(80);
     cBuf.set(vp, 0);
     cBuf.set([eye[0], eye[1], eye[2], this.frame], 16);
     cBuf.set([this.sunDir[0], this.sunDir[1], this.sunDir[2], this.useGI ? 1 : 0], 20);
@@ -2608,11 +2702,13 @@ export class WebGPUFastSDFAO {
     cBuf.set([1 / s.sdfSpan[0], 1 / s.sdfSpan[1], 1 / s.sdfSpan[2], (this.useGI && this.useReflections) ? 1 : 0], 40);
     cBuf.set(dynPR, 44);
     cBuf.set(dynCR, 60);
+    cBuf.set([s.planarReflectionZ ?? 0, usePlanar ? 1 : 0], 76);
     d.queue.writeBuffer(this.compUBuf, 0, cBuf);
 
     // Fully-settled static fast-path: skip G-buffer + trace + temporal + denoise completely when
     // camera, sun, orb & dynamic objects are still and SHaRC cache + shadows + reflections have converged!
-    const fullySettled = camSame && !hasDyn && this.stillFrames >= 72 && this.lastSkipPct >= 90 && this._lastCompBG;
+    const fullySettled = camSame && !hasDyn && this.stillFrames >= 72 && this.lastSkipPct >= 90 && this._lastCompBG
+      && (!usePlanar || s.planarReflectionReady);
     if (fullySettled) {
       const enc = d.createCommandEncoder();
       const fp = enc.beginRenderPass({
@@ -2735,6 +2831,16 @@ export class WebGPUFastSDFAO {
       compBG = this.compBGD1[curIdx];
     }
     cp.end();
+
+    if (usePlanar) {
+      s.planarReflection.encode(enc, s, {
+        uniform: this.compUBuf, sampler: this.linSamp,
+        gPosDepth: this.gPosDepth[curIdx], gNormal: this.gNormal[curIdx],
+        aoGI: effDenoisePasses === 2 ? this.denoiseB : this.denoiseA,
+        meta: this.histMeta[curIdx], radVol: q.multiBounce ? this.radVolB : this.radVolA,
+      });
+      s.planarReflectionReady = true;
+    }
 
     // Pass 4: Full-Res Composite
     const fp = enc.beginRenderPass({

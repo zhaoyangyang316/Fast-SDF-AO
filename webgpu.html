@@ -371,7 +371,10 @@ try {
         if (sdfHalf.length !== sdfDims[0] * sdfDims[1] * sdfDims[2]) throw Error('Unexpected Sponza SDF size');
         const contactRange = Math.max(0.18, 0.12 + 0.5 * Math.hypot(...sdfSpan.map((span, i) => span / sdfDims[i])));
         const bvh = buildContactBVH([makeThreeMesh(data)], T, { gridSize: 'auto', range: contactRange + 0.0005 });
-        return { ...data, sdfHalf, sdfDims, sdfMin, sdfSpan, bvh, contactRange, cam: SPONZA_CAMERA, dragonData, useGI: true };
+        return {
+          ...data, sdfHalf, sdfDims, sdfMin, sdfSpan, bvh, contactRange,
+          cam: SPONZA_CAMERA, dragonData, useGI: true, planarReflectionZ: 0,
+        };
       }).catch(error => { delete sceneCache[name]; throw error; });
     } else {
       const [boxes, sdfHalf] = await Promise.all([

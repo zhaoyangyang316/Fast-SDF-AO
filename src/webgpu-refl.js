@@ -67,7 +67,7 @@ ${rigid ? RIGID_MESH_WGSL + rigidRadianceWGSL('sampleSDF') : ''}
 ${DYNAMIC_SHAPES_WGSL}
 struct ReflU {
   curViewProj: mat4x4<f32>,
-  sdfMin: vec4<f32>,
+  sdfMin: vec4<f32>,        // xyz=volume corner, w=planar reflection height
   sdfInvSpan: vec4<f32>,
   gridMinSize: vec4<f32>,   // xyz=gridMin, w=gridSize
   gridDimsRange: vec4<f32>, // xyz=gridDims, w=contactRange
@@ -78,7 +78,7 @@ struct ReflU {
   params: vec4<f32>,        // x=W, y=H, z=reflRoughCut, w=maxDist
   rootMin: vec4<f32>,
   rootSpan: vec4<f32>,
-  extra: vec4<u32>,         // x=nodeCount, y=enabled(0/1), z=flags(bit0=checker,bit1=useBvh), w=maxSteps
+  extra: vec4<u32>,         // x=nodeCount, y=enabled, z=flags (checker, BVH, movers, planar mirror), w=maxSteps
   dynPosRad: array<vec4<f32>, 4>,
   dynColRough: array<vec4<f32>, 4>,
 };
@@ -313,6 +313,14 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     return;
   }
 
+  // The full-resolution composite supplies the static mirror plane's reflection.
+  // Its distinct tag excludes rigid metal (2.25), including coplanar rigid faces.
+  if ((u.extra.z & 8u) != 0u && gn.w == 2.0 && gn.z > 0.999 &&
+      rough <= 0.08 && abs(pd.z - u.sdfMin.w) <= 0.001) {
+    textureStore(outRefl, q, vec4<f32>(0.0, 0.0, 0.0, -2.0));
+    return;
+  }
+
   let frame = u32(u.eyeFrame.w);
   // Checkerboard skip for rough surfaces (rough > 0.12): 50% fewer reflection rays with identical denoised look,
   // while mirror chrome (rough <= 0.12) always traces every pixel at full rate!
@@ -496,7 +504,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let isMetal = gn.w > 1.5;
   let rough = clamp(ar.a, 0.03, 1.0);
   let c0 = textureLoad(curRefl, q, 0);
-  if (pd.w <= 0.0 || gn.w < 0.5 || (!isMetal && rough > 0.45)) {
+  // Preserve the planar no-ray marker. The spatial filter rejects negative
+  // neighbors, and reprojection rejects this marker on a newly revealed receiver.
+  if (c0.w < -1.5 || pd.w <= 0.0 || gn.w < 0.5 || (!isMetal && rough > 0.45)) {
     textureStore(outRefl, q, c0);
     return;
   }
@@ -589,7 +599,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     if (abs(dot(n, ppd.xyz - p)) > planeTol * (1.0 + virtWeight * 4.0)) { continue; }
     let par = textureLoad(gAlbedoRough, pq, 0);
     if (abs(par.a - rough) > 0.14) { continue; }
-    acc += textureLoad(prevRefl, pq, 0) * bw;
+    let history = textureLoad(prevRefl, pq, 0);
+    if (history.w < -1.5) { continue; }
+    acc += history * bw;
     wSum += bw;
   }
   // Fallback to surface-motion reprojection if virtual point fell outside matching plane
@@ -615,7 +627,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         if (abs(dot(n, ppd.xyz - p)) > planeTol) { continue; }
         let par = textureLoad(gAlbedoRough, pq, 0);
         if (abs(par.a - rough) > 0.14) { continue; }
-        acc += textureLoad(prevRefl, pq, 0) * bw;
+        let history = textureLoad(prevRefl, pq, 0);
+        if (history.w < -1.5) { continue; }
+        acc += history * bw;
         wSum += bw;
       }
     }
