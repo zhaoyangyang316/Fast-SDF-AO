@@ -140,6 +140,16 @@ python3 test/webgpu-browser.py benchmark/rigid-mesh-bench.mjs --scene gallery --
 
 Use `--browser /path/to/chromium` for a system browser or add `--software` for a SwiftShader functional run.
 
+### A moving dragon in Sponza
+
+Serve this checkout with `python3 -m http.server 8000` and open [Sponza & Dragon](http://localhost:8000/webgpu.html?scene=sponza-dragon) in a WebGPU browser. The preset is also available in the scene selector. Use **Pause dragon** to inspect a pose and **Show dragon** to compare the same view with the courtyard empty.
+
+The Sponza architecture has 243,645 static triangles. Its contact BVHs and baked FP16 distance field stay fixed throughout the flight. The dragon adds 43,440 triangles in one local-space BVH. Each animation step changes the dragon’s pose and refits its instance bounds. The wings keep their modeled shape during the glide.
+
+The courtyard uses Frank Meinl’s Crytek Sponza from Morgan McGuire’s collection. Its diffuse textures are sampled into vertex colors, and the conversion omits opacity-masked foliage and chains. Tomek Zamojski created the Red Dragon. Both assets are distributed under CC BY 3.0. [Sponza credits and conversion](assets/sponza-dragon/SPONZA.md) · [Dragon credits and conversion](assets/sponza-dragon/DRAGON-LICENSE.md)
+
+Watch the flight and compare lighting stability, motion clearance and the frame times with the dragon hidden, parked and moving. [Animation and validation results](benchmark/sponza-dragon.md)
+
 ### Eight moving meshes in the Atrium
 
 Open `webgpu.html?scene=rigid-atrium` in the served checkout to animate four teapots and four torus knots. The static Atrium contains 13,704 triangles. The eight props add 41,728 instanced triangles from four shared material and geometry combinations.

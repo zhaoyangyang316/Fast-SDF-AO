@@ -6,7 +6,7 @@
 // harness in both checkouts with matching arguments. For SwiftShader, add --software.
 import {createAtriumWorkload} from './rigid-atrium-scene.mjs';
 
-const workloads = {
+const atriumWorkloads = {
   empty: {count: 0},
   'one-parked': {count: 1},
   'one-moving': {count: 1, moving: true},
@@ -14,7 +14,6 @@ const workloads = {
   'eight-moving': {count: 8, moving: true},
   'eight-parked-default': {count: 8, defaultHash: true},
 };
-const activeCases = Object.keys(workloads).filter(key => !workloads[key].defaultHash);
 const activeSamples = 12, activeWarmup = 6;
 
 function distribution(values) {
@@ -61,7 +60,13 @@ function frameCounters(gpu) {
   };
 }
 
-export async function run(demo, {cases = activeCases, rounds = [0, 1, 2]} = {}) {
+export function run(demo, options) {
+  return measureRigidWorkloads(demo, createAtriumWorkload, atriumWorkloads, options);
+}
+
+export async function measureRigidWorkloads(demo, createWorkload, workloads, {
+  cases = Object.keys(workloads).filter(key => !workloads[key].defaultHash), rounds = [0, 1, 2],
+} = {}) {
   if (!cases.length || cases.some(key => !Object.hasOwn(workloads,key)) ||
       !rounds.length || rounds.some(i => !Number.isInteger(i) || i < 0)) throw Error('Invalid cases or rounds');
   demo.stopLoop();
@@ -89,14 +94,14 @@ export async function run(demo, {cases = activeCases, rounds = [0, 1, 2]} = {}) 
         const samples = defaultHash ? 36 : activeSamples;
         const startTime = round*activeSamples/30;
         const setupBefore = {...scene.stats};
-        const fixture = await createAtriumWorkload(demo, {count, time: startTime});
+        const fixture = await createWorkload(demo, {count, time: startTime});
         try {
           gpu.setQuality('high');
           gpu.useHash = defaultHash;
           gpu.viewMode = 0;
           gpu.clearHash();
           if (scene.count !== count || !gpu.useGI || !gpu.useReflections || gpu.dynObjects.length)
-            throw Error('Unexpected Atrium geometry or renderer settings');
+            throw Error('Unexpected scene geometry or renderer settings');
           const currentCamera = demo.camera.position.toArray(), currentTarget = demo.controls.target.toArray();
           if (camera && (camera.some((v,i) => Math.abs(v-currentCamera[i]) > 1e-6) ||
               target.some((v,i) => Math.abs(v-currentTarget[i]) > 1e-6)))
@@ -142,7 +147,7 @@ export async function run(demo, {cases = activeCases, rounds = [0, 1, 2]} = {}) 
           blocks.push({name, round, count, moving, hash: defaultHash, warmup, startTime, assets,
             instancedTriangles, setupUpdates, updates, frames});
         } finally {
-          fixture.dispose();
+          fixture.dispose?.();
         }
       }
     }

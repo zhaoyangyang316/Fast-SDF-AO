@@ -1,0 +1,2193 @@
+{
+  "quality": {
+    "size": [
+      320,
+      180
+    ],
+    "camera": {
+      "eye": [
+        -5.9,
+        -1.1199999999999997,
+        1.65
+      ],
+      "target": [
+        1.1,
+        0.12,
+        1.36
+      ]
+    },
+    "motionFps": 15,
+    "preset": "high",
+    "adapter": "swiftshader",
+    "assetTriangles": 43440,
+    "firstPoseSeconds": 0,
+    "lastPoseSeconds": 2,
+    "timestep": 0.03333333333333333,
+    "measuredFramePairs": 16,
+    "gbufferSize": [
+      160,
+      90
+    ],
+    "movingPoseAPixels": 437,
+    "poseBDragonPixels": 832,
+    "visibleSurfacePixels": 14400,
+    "dragonSurfaceCoverage": 0.057777777777777775,
+    "poseChangeSilhouetteSamples": 757,
+    "distantBackgroundTemporal": {
+      "parked": {
+        "pixels": 240256,
+        "mae": 0.00437706874527684,
+        "rms": 0.005536781287719957,
+        "p95": 0.0078125,
+        "fractionAbove5pct": 0.0003954115610015983
+      },
+      "moving": {
+        "pixels": 240256,
+        "mae": 0.005636134308537698,
+        "rms": 0.013299881530486083,
+        "p95": 0.01171875,
+        "fractionAbove5pct": 0.0049988345764517845
+      }
+    },
+    "matchedPoseDuringMotion": {
+      "visibleSurfaces": {
+        "pixels": 57600,
+        "mae": 0.0072739941634072085,
+        "rms": 0.014383585085531808,
+        "p95": 0.0244140625,
+        "fractionAbove5pct": 0.014427083333333333
+      },
+      "dragon": {
+        "pixels": 3328,
+        "mae": 0.009099363658839524,
+        "rms": 0.014799194039032855,
+        "p95": 0.02880859375,
+        "fractionAbove5pct": 0.012319711538461538
+      },
+      "recentlyVacated": {
+        "pixels": 1224,
+        "mae": 0.014844186119767584,
+        "rms": 0.022784905282204566,
+        "p95": 0.048828125,
+        "fractionAbove5pct": 0.0457516339869281
+      }
+    },
+    "stoppedFrameError": {
+      "1": {
+        "visibleSurfaces": {
+          "pixels": 57600,
+          "mae": 0.0063280969745496745,
+          "rms": 0.011902959148857875,
+          "p95": 0.02197265625,
+          "fractionAbove5pct": 0.010434027777777778
+        },
+        "dragon": {
+          "pixels": 3328,
+          "mae": 0.007628087613715569,
+          "rms": 0.01182124020479409,
+          "p95": 0.02490234375,
+          "fractionAbove5pct": 0.006610576923076923
+        },
+        "recentlyVacated": {
+          "pixels": 1224,
+          "mae": 0.013190441681368239,
+          "rms": 0.020016979043552076,
+          "p95": 0.044921875,
+          "fractionAbove5pct": 0.03758169934640523
+        }
+      },
+      "3": {
+        "visibleSurfaces": {
+          "pixels": 57600,
+          "mae": 0.0058381621778240385,
+          "rms": 0.010049679781252464,
+          "p95": 0.01806640625,
+          "fractionAbove5pct": 0.006458333333333333
+        },
+        "dragon": {
+          "pixels": 3328,
+          "mae": 0.006687269029591834,
+          "rms": 0.00953808247755028,
+          "p95": 0.01953125,
+          "fractionAbove5pct": 0.0033052884615384615
+        },
+        "recentlyVacated": {
+          "pixels": 1224,
+          "mae": 0.010660164209798846,
+          "rms": 0.015864630154344386,
+          "p95": 0.03466796875,
+          "fractionAbove5pct": 0.016339869281045753
+        }
+      },
+      "8": {
+        "visibleSurfaces": {
+          "pixels": 57600,
+          "mae": 0.004955133730257614,
+          "rms": 0.008068590345883902,
+          "p95": 0.0146484375,
+          "fractionAbove5pct": 0.0024305555555555556
+        },
+        "dragon": {
+          "pixels": 3328,
+          "mae": 0.0049265101013075685,
+          "rms": 0.006658560773674321,
+          "p95": 0.013671875,
+          "fractionAbove5pct": 0.0006009615384615385
+        },
+        "recentlyVacated": {
+          "pixels": 1224,
+          "mae": 0.009185570380643484,
+          "rms": 0.01367704424681831,
+          "p95": 0.03173828125,
+          "fractionAbove5pct": 0.007352941176470588
+        }
+      }
+    },
+    "frozenWindowDrift": {
+      "occupied": {
+        "pixels": 57600,
+        "mae": 0.0016504810637154687,
+        "rms": 0.003717609340823661,
+        "p95": 0.005859375,
+        "fractionAbove5pct": 0.00036458333333333335
+      },
+      "empty": {
+        "pixels": 57600,
+        "mae": 0.0016269130555937796,
+        "rms": 0.003580410060675608,
+        "p95": 0.00537109375,
+        "fractionAbove5pct": 0.00036458333333333335
+      },
+      "earlierFrames": [
+        33,
+        40
+      ],
+      "referenceFrames": [
+        41,
+        48
+      ]
+    },
+    "sameSurfaceLighting": {
+      "staticSamples": 13568,
+      "aoDarkerByFivePercent": 448,
+      "sunVisibilityDarkerByTenPercent": 376,
+      "linearGIRgbL1ChangeAbovePointOne": 120,
+      "floor": {
+        "samples": 3006,
+        "aoDarkerByFivePercent": 438,
+        "sunDarkerByTenPercent": 376,
+        "shadowWorldBounds": [
+          -1.9151968955993652,
+          -0.0435108058154583,
+          5.598004341125488,
+          1.8744566440582275
+        ]
+      }
+    },
+    "ifDragonImageWereHeld": {
+      "oldDragonSilhouette": {
+        "pixels": 3328,
+        "mae": 0.2988534802896369,
+        "rms": 0.3681107249344994,
+        "p95": 0.7490234375,
+        "fractionAbove5pct": 0.9119591346153846
+      },
+      "castShadowReceivers": {
+        "pixels": 1504,
+        "mae": 0.1264860266758189,
+        "rms": 0.15930067025072728,
+        "p95": 0.30224609375,
+        "fractionAbove5pct": 0.7952127659574468
+      }
+    },
+    "removedFrameError": {
+      "1": {
+        "oldDragonSilhouette": {
+          "pixels": 3328,
+          "mae": 0.010210455107169737,
+          "rms": 0.015252581940953193,
+          "p95": 0.03271484375,
+          "fractionAbove5pct": 0.014122596153846154
+        },
+        "castShadowReceivers": {
+          "pixels": 1504,
+          "mae": 0.04411678218963092,
+          "rms": 0.053381231596565694,
+          "p95": 0.1044921875,
+          "fractionAbove5pct": 0.3304521276595745
+        }
+      },
+      "3": {
+        "oldDragonSilhouette": {
+          "pixels": 3328,
+          "mae": 0.00869420565578156,
+          "rms": 0.012942469797992838,
+          "p95": 0.02880859375,
+          "fractionAbove5pct": 0.009314903846153846
+        },
+        "castShadowReceivers": {
+          "pixels": 1504,
+          "mae": 0.030441483363826224,
+          "rms": 0.0362855196189575,
+          "p95": 0.06982421875,
+          "fractionAbove5pct": 0.17420212765957446
+        }
+      },
+      "8": {
+        "oldDragonSilhouette": {
+          "pixels": 3328,
+          "mae": 0.006379128849764526,
+          "rms": 0.009006473620240527,
+          "p95": 0.02001953125,
+          "fractionAbove5pct": 0.0006009615384615385
+        },
+        "castShadowReceivers": {
+          "pixels": 1504,
+          "mae": 0.011724725365638735,
+          "rms": 0.014644089673373913,
+          "p95": 0.02978515625,
+          "fractionAbove5pct": 0
+        }
+      }
+    }
+  },
+  "timing": {
+    "adapter": {
+      "vendor": "google",
+      "architecture": "swiftshader",
+      "description": "",
+      "device": ""
+    },
+    "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "resolution": [
+      320,
+      180
+    ],
+    "quality": "high",
+    "camera": [
+      -5.9,
+      -1.1199999999999997,
+      1.65
+    ],
+    "target": [
+      1.1,
+      0.12,
+      1.36
+    ],
+    "staticTriangles": 243645,
+    "sampling": {
+      "activeWarmup": 6,
+      "activeFramesPerBlock": 12,
+      "rounds": [
+        0,
+        1,
+        2
+      ],
+      "timeStepSeconds": 0.03333333333333333,
+      "completedMs": "Pose update, CPU frame submission and queue completion; one frame in flight",
+      "passMs": "WebGPU timestamps from G-buffer start (or composite on skipped frames) to final composite end",
+      "primaryAoGiRays": "Traced half-resolution surface pixels times the High primary rays per pixel; excludes secondary rays and shadow/reflection rays"
+    },
+    "summaries": [
+      {
+        "name": "empty",
+        "samples": 36,
+        "compositeOnlyFrames": 0,
+        "completedMs": {
+          "median": 480.5,
+          "p95": 1095.1999999999534,
+          "mean": 595.6666666666861
+        },
+        "passMs": {
+          "median": 476.8985815,
+          "p95": 1080.647624,
+          "mean": 591.2787784166667
+        },
+        "poseMs": {
+          "median": 0,
+          "p95": 0,
+          "mean": 0.002777777780364785
+        },
+        "prepareMs": {
+          "median": 0,
+          "p95": 0,
+          "mean": 0.00555555556072957
+        },
+        "renderSubmitMs": {
+          "median": 0.5,
+          "p95": 4.099999999860302,
+          "mean": 1.0194444444496185
+        },
+        "primaryAoGiRays": {
+          "median": 28800,
+          "p95": 28800,
+          "mean": 28800
+        },
+        "cachedPixels": {
+          "median": 0,
+          "p95": 0,
+          "mean": 0
+        }
+      },
+      {
+        "name": "dragon-parked",
+        "samples": 36,
+        "compositeOnlyFrames": 0,
+        "completedMs": {
+          "median": 961.4000000000233,
+          "p95": 1300,
+          "mean": 1003.3416666666421
+        },
+        "passMs": {
+          "median": 959.3320205,
+          "p95": 1297.606564,
+          "mean": 1001.0514897222224
+        },
+        "poseMs": {
+          "median": 0,
+          "p95": 0,
+          "mean": 0.002777777773897267
+        },
+        "prepareMs": {
+          "median": 0,
+          "p95": 0,
+          "mean": 0.002777777773897267
+        },
+        "renderSubmitMs": {
+          "median": 0.4000000001396984,
+          "p95": 0.9000000001396984,
+          "mean": 0.4944444444198679
+        },
+        "primaryAoGiRays": {
+          "median": 28800,
+          "p95": 28800,
+          "mean": 28800
+        },
+        "cachedPixels": {
+          "median": 0,
+          "p95": 0,
+          "mean": 0
+        }
+      },
+      {
+        "name": "dragon-moving",
+        "samples": 36,
+        "compositeOnlyFrames": 0,
+        "completedMs": {
+          "median": 1581.3499999999767,
+          "p95": 1900.3000000000466,
+          "mean": 1449.3861111110828
+        },
+        "passMs": {
+          "median": 1577.2588485,
+          "p95": 1895.903749,
+          "mean": 1445.6713857777772
+        },
+        "poseMs": {
+          "median": 0.09999999986030161,
+          "p95": 0.10000000009313226,
+          "mean": 0.07499999999870649
+        },
+        "prepareMs": {
+          "median": 0,
+          "p95": 0.10000000009313226,
+          "mean": 0.03611111113180717
+        },
+        "renderSubmitMs": {
+          "median": 0.39999999990686774,
+          "p95": 1.0999999998603016,
+          "mean": 0.4611111111072306
+        },
+        "primaryAoGiRays": {
+          "median": 28800,
+          "p95": 28800,
+          "mean": 28800
+        },
+        "cachedPixels": {
+          "median": 0,
+          "p95": 0,
+          "mean": 0
+        }
+      }
+    ],
+    "blocks": [
+      {
+        "name": "empty",
+        "round": 0,
+        "count": 0,
+        "moving": false,
+        "hash": false,
+        "warmup": 6,
+        "startTime": 0,
+        "assets": [],
+        "instancedTriangles": 0,
+        "setupUpdates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 1,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 32
+        },
+        "updates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 0
+        },
+        "frames": [
+          {
+            "completedMs": 1095.1999999999534,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 4.099999999860302,
+            "stillFrames": 7,
+            "compositeOnly": false,
+            "passMs": 1080.647624,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 577,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 8,
+            "compositeOnly": false,
+            "passMs": 575.249056,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 499.80000000004657,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 9,
+            "compositeOnly": false,
+            "passMs": 497.739771,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 606,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 10,
+            "compositeOnly": false,
+            "passMs": 599.810874,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 851.3000000000466,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 1.5,
+            "stillFrames": 11,
+            "compositeOnly": false,
+            "passMs": 848.038668,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 932.8000000000466,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 9.900000000139698,
+            "stillFrames": 12,
+            "compositeOnly": false,
+            "passMs": 915.803067,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 794.1999999999534,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.6999999999534339,
+            "stillFrames": 13,
+            "compositeOnly": false,
+            "passMs": 791.505512,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 815.7000000001863,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 14,
+            "compositeOnly": false,
+            "passMs": 811.697466,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 785.6999999999534,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 2,
+            "stillFrames": 15,
+            "compositeOnly": false,
+            "passMs": 777.469038,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 646,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 16,
+            "compositeOnly": false,
+            "passMs": 644.456316,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 499.39999999990687,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 17,
+            "compositeOnly": false,
+            "passMs": 497.405871,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 515.0999999998603,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 18,
+            "compositeOnly": false,
+            "passMs": 511.759274,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          }
+        ]
+      },
+      {
+        "name": "dragon-parked",
+        "round": 0,
+        "count": 1,
+        "moving": false,
+        "hash": false,
+        "warmup": 6,
+        "startTime": 0,
+        "assets": [
+          {
+            "name": "Dragon",
+            "triangles": 43440
+          }
+        ],
+        "instancedTriangles": 43440,
+        "setupUpdates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 1,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 80,
+          "tlasBytesUploaded": 32
+        },
+        "updates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 0
+        },
+        "frames": [
+          {
+            "completedMs": 959.3000000000466,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 7,
+            "compositeOnly": false,
+            "passMs": 957.060995,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1300,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 8,
+            "compositeOnly": false,
+            "passMs": 1297.606564,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1002.3999999999069,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 9,
+            "compositeOnly": false,
+            "passMs": 999.654539,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 929.9000000001397,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.7000000001862645,
+            "stillFrames": 10,
+            "compositeOnly": false,
+            "passMs": 928.23347,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 910,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 11,
+            "compositeOnly": false,
+            "passMs": 907.638377,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 955.0999999998603,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5999999998603016,
+            "stillFrames": 12,
+            "compositeOnly": false,
+            "passMs": 953.284311,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 955.6999999999534,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 13,
+            "compositeOnly": false,
+            "passMs": 953.150265,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 936.1999999999534,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.6999999999534339,
+            "stillFrames": 14,
+            "compositeOnly": false,
+            "passMs": 933.735121,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 940.5,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 15,
+            "compositeOnly": false,
+            "passMs": 938.586851,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1001.2999999998137,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 16,
+            "compositeOnly": false,
+            "passMs": 999.146011,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1150.3000000000466,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.4000000001396984,
+            "stillFrames": 17,
+            "compositeOnly": false,
+            "passMs": 1145.40476,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1847.5,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.9000000001396984,
+            "stillFrames": 18,
+            "compositeOnly": false,
+            "passMs": 1844.149088,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          }
+        ]
+      },
+      {
+        "name": "dragon-moving",
+        "round": 0,
+        "count": 1,
+        "moving": true,
+        "hash": false,
+        "warmup": 6,
+        "startTime": 0,
+        "assets": [
+          {
+            "name": "Dragon",
+            "triangles": 43440
+          }
+        ],
+        "instancedTriangles": 43440,
+        "setupUpdates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 0
+        },
+        "updates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 12,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 960,
+          "tlasBytesUploaded": 384
+        },
+        "frames": [
+          {
+            "completedMs": 1732.2999999998137,
+            "poseMs": 0.09999999986030161,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.4000000001396984,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1729.912884,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1695.1999999999534,
+            "poseMs": 0.09999999986030161,
+            "prepareMs": 0.20000000018626451,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1688.107237,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1833.1000000000931,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1828.484287,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1991.8999999999069,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1989.357106,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1669.2000000001863,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.6999999999534339,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1667.00893,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1900.3000000000466,
+            "poseMs": 0.09999999986030161,
+            "prepareMs": 0.10000000009313226,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1895.903749,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1739.3000000000466,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0.10000000009313226,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1735.486883,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1712.5,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0.10000000009313226,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1708.305581,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1543.5,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1540.957602,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1556.6999999999534,
+            "poseMs": 0.09999999986030161,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1550.491264,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1777.1999999999534,
+            "poseMs": 0.09999999986030161,
+            "prepareMs": 0.10000000009313226,
+            "renderSubmitMs": 0.19999999995343387,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1774.327694,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1797.5999999998603,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1794.151764,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          }
+        ]
+      },
+      {
+        "name": "dragon-moving",
+        "round": 1,
+        "count": 1,
+        "moving": true,
+        "hash": false,
+        "warmup": 6,
+        "startTime": 0.4,
+        "assets": [
+          {
+            "name": "Dragon",
+            "triangles": 43440
+          }
+        ],
+        "instancedTriangles": 43440,
+        "setupUpdates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 0
+        },
+        "updates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 12,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 960,
+          "tlasBytesUploaded": 384
+        },
+        "frames": [
+          {
+            "completedMs": 1644,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 1.1000000000931323,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1637.363895,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1707.8999999999069,
+            "poseMs": 0.09999999986030161,
+            "prepareMs": 0.09999999986030161,
+            "renderSubmitMs": 0.4000000001396984,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1700.462134,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1646.5999999998603,
+            "poseMs": 0,
+            "prepareMs": 0.09999999986030161,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1644.380737,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1516.0999999998603,
+            "poseMs": 0.09999999986030161,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.4000000001396984,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1514.424163,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1314.8000000000466,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1312.86175,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1017.5,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0.10000000009313226,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1015.600347,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1073,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.4000000001396984,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1070.735849,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1188.6999999999534,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0.10000000009313226,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1186.59061,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1012.3000000000466,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0.10000000009313226,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1009.496998,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1092.6000000000931,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1090.719408,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 992.0999999998603,
+            "poseMs": 0.09999999986030161,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.4000000001396984,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 989.374165,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1753.8999999999069,
+            "poseMs": 0,
+            "prepareMs": 0.10000000009313226,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1751.588112,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          }
+        ]
+      },
+      {
+        "name": "empty",
+        "round": 1,
+        "count": 0,
+        "moving": false,
+        "hash": false,
+        "warmup": 6,
+        "startTime": 0.4,
+        "assets": [],
+        "instancedTriangles": 0,
+        "setupUpdates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 1,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 32
+        },
+        "updates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 0
+        },
+        "frames": [
+          {
+            "completedMs": 479.0999999998603,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 7,
+            "compositeOnly": false,
+            "passMs": 474.463757,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 445.80000000004657,
+            "poseMs": 0,
+            "prepareMs": 0.20000000018626451,
+            "renderSubmitMs": 1.6000000000931323,
+            "stillFrames": 8,
+            "compositeOnly": false,
+            "passMs": 440.958214,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 461,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2999999998137355,
+            "stillFrames": 9,
+            "compositeOnly": false,
+            "passMs": 458.685969,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 466.80000000004657,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 10,
+            "compositeOnly": false,
+            "passMs": 445.045027,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 442,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5999999998603016,
+            "stillFrames": 11,
+            "compositeOnly": false,
+            "passMs": 439.97704,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 467.5,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 12,
+            "compositeOnly": false,
+            "passMs": 465.277301,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 449.5,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 13,
+            "compositeOnly": false,
+            "passMs": 446.005023,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 459,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 1,
+            "stillFrames": 14,
+            "compositeOnly": false,
+            "passMs": 456.37845,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 442.10000000009313,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 15,
+            "compositeOnly": false,
+            "passMs": 439.939877,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 458.10000000009313,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.8000000000465661,
+            "stillFrames": 16,
+            "compositeOnly": false,
+            "passMs": 455.995988,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 443.0999999998603,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 17,
+            "compositeOnly": false,
+            "passMs": 441.169276,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 458.30000000004657,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 18,
+            "compositeOnly": false,
+            "passMs": 456.486564,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          }
+        ]
+      },
+      {
+        "name": "dragon-parked",
+        "round": 1,
+        "count": 1,
+        "moving": false,
+        "hash": false,
+        "warmup": 6,
+        "startTime": 0.4,
+        "assets": [
+          {
+            "name": "Dragon",
+            "triangles": 43440
+          }
+        ],
+        "instancedTriangles": 43440,
+        "setupUpdates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 1,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 80,
+          "tlasBytesUploaded": 32
+        },
+        "updates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 0
+        },
+        "frames": [
+          {
+            "completedMs": 963.5,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.6000000000931323,
+            "stillFrames": 7,
+            "compositeOnly": false,
+            "passMs": 961.603046,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 999.0999999998603,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2999999998137355,
+            "stillFrames": 8,
+            "compositeOnly": false,
+            "passMs": 996.792526,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 895.8000000000466,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 9,
+            "compositeOnly": false,
+            "passMs": 893.476602,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 946.1999999999534,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 10,
+            "compositeOnly": false,
+            "passMs": 944.959148,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 926.6999999999534,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 11,
+            "compositeOnly": false,
+            "passMs": 925.265589,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 932.6000000000931,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 12,
+            "compositeOnly": false,
+            "passMs": 930.86076,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 973.8000000000466,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 13,
+            "compositeOnly": false,
+            "passMs": 972.580738,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 902.3999999999069,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 14,
+            "compositeOnly": false,
+            "passMs": 900.576812,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1022.8999999999069,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 15,
+            "compositeOnly": false,
+            "passMs": 1020.644863,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1035.6999999999534,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.4000000001396984,
+            "stillFrames": 16,
+            "compositeOnly": false,
+            "passMs": 1033.720023,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1009.3999999999069,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 1.1999999999534339,
+            "stillFrames": 17,
+            "compositeOnly": false,
+            "passMs": 1006.733346,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 929.6000000000931,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 18,
+            "compositeOnly": false,
+            "passMs": 927.78956,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          }
+        ]
+      },
+      {
+        "name": "dragon-parked",
+        "round": 2,
+        "count": 1,
+        "moving": false,
+        "hash": false,
+        "warmup": 6,
+        "startTime": 0.8,
+        "assets": [
+          {
+            "name": "Dragon",
+            "triangles": 43440
+          }
+        ],
+        "instancedTriangles": 43440,
+        "setupUpdates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 1,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 80,
+          "tlasBytesUploaded": 32
+        },
+        "updates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 0
+        },
+        "frames": [
+          {
+            "completedMs": 975.6999999999534,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.2999999998137355,
+            "stillFrames": 7,
+            "compositeOnly": false,
+            "passMs": 974.181678,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 937,
+            "poseMs": 0,
+            "prepareMs": 0.09999999986030161,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 8,
+            "compositeOnly": false,
+            "passMs": 934.773306,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 909.8000000000466,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.6000000000931323,
+            "stillFrames": 9,
+            "compositeOnly": false,
+            "passMs": 907.060712,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 973.8999999999069,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 10,
+            "compositeOnly": false,
+            "passMs": 972.026588,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 971.5,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 11,
+            "compositeOnly": false,
+            "passMs": 968.852242,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 936.3999999999069,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5999999998603016,
+            "stillFrames": 12,
+            "compositeOnly": false,
+            "passMs": 934.346976,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 997.8000000000466,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 13,
+            "compositeOnly": false,
+            "passMs": 995.349684,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 951.6000000000931,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 14,
+            "compositeOnly": false,
+            "passMs": 947.566632,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 918.8999999999069,
+            "poseMs": 0.09999999986030161,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.8000000000465661,
+            "stillFrames": 15,
+            "compositeOnly": false,
+            "passMs": 916.210005,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1101.5999999998603,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 16,
+            "compositeOnly": false,
+            "passMs": 1099.516735,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1038.8000000000466,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 17,
+            "compositeOnly": false,
+            "passMs": 1036.24701,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 981.3999999999069,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5999999998603016,
+            "stillFrames": 18,
+            "compositeOnly": false,
+            "passMs": 979.068697,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          }
+        ]
+      },
+      {
+        "name": "dragon-moving",
+        "round": 2,
+        "count": 1,
+        "moving": true,
+        "hash": false,
+        "warmup": 6,
+        "startTime": 0.8,
+        "assets": [
+          {
+            "name": "Dragon",
+            "triangles": 43440
+          }
+        ],
+        "instancedTriangles": 43440,
+        "setupUpdates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 0
+        },
+        "updates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 12,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 960,
+          "tlasBytesUploaded": 384
+        },
+        "frames": [
+          {
+            "completedMs": 975.6999999999534,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 972.943367,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1107.3000000000466,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.8999999999068677,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1096.350744,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1126.4000000001397,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1124.077089,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1168.8000000000466,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1166.867025,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 926,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 923.53089,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1023.5,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1020.645436,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1084.3999999999069,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0.10000000009313226,
+            "renderSubmitMs": 1.0999999998603016,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1081.763757,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1158.5999999998603,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1153.293488,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1752.1999999999534,
+            "poseMs": 0.09999999986030161,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.6000000000931323,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1742.261961,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1668.7999999998137,
+            "poseMs": 0.19999999995343387,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.30000000004656613,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1662.997127,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1671.8999999999069,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1669.319422,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1606,
+            "poseMs": 0.09999999986030161,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.4000000001396984,
+            "stillFrames": 0,
+            "compositeOnly": false,
+            "passMs": 1604.026433,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          }
+        ]
+      },
+      {
+        "name": "empty",
+        "round": 2,
+        "count": 0,
+        "moving": false,
+        "hash": false,
+        "warmup": 6,
+        "startTime": 0.8,
+        "assets": [],
+        "instancedTriangles": 0,
+        "setupUpdates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 1,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 32
+        },
+        "updates": {
+          "assetBuilds": 0,
+          "tlasBuilds": 0,
+          "tlasRefits": 0,
+          "geometryBytesUploaded": 0,
+          "poseBytesUploaded": 0,
+          "tlasBytesUploaded": 0
+        },
+        "frames": [
+          {
+            "completedMs": 918.2000000001863,
+            "poseMs": 0.10000000009313226,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.8999999999068677,
+            "stillFrames": 7,
+            "compositeOnly": false,
+            "passMs": 914.957242,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 967.5999999998603,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.39999999990686774,
+            "stillFrames": 8,
+            "compositeOnly": false,
+            "passMs": 962.625623,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 1162,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.6000000000931323,
+            "stillFrames": 9,
+            "compositeOnly": false,
+            "passMs": 1153.713485,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 591.7000000001863,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 2.4000000001396984,
+            "stillFrames": 10,
+            "compositeOnly": false,
+            "passMs": 587.718663,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 438.80000000004657,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.6000000000931323,
+            "stillFrames": 11,
+            "compositeOnly": false,
+            "passMs": 436.850833,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 462.20000000018626,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.4000000001396984,
+            "stillFrames": 12,
+            "compositeOnly": false,
+            "passMs": 459.32237,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 508.80000000004657,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.6999999999534339,
+            "stillFrames": 13,
+            "compositeOnly": false,
+            "passMs": 505.718972,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 476.9000000001397,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.9000000001396984,
+            "stillFrames": 14,
+            "compositeOnly": false,
+            "passMs": 474.439168,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 481.9000000001397,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.6000000000931323,
+            "stillFrames": 15,
+            "compositeOnly": false,
+            "passMs": 479.333406,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 431.89999999990687,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 16,
+            "compositeOnly": false,
+            "passMs": 429.980372,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 464.10000000009313,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 17,
+            "compositeOnly": false,
+            "passMs": 462.670134,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          },
+          {
+            "completedMs": 449.39999999990687,
+            "poseMs": 0,
+            "prepareMs": 0,
+            "renderSubmitMs": 0.5,
+            "stillFrames": 18,
+            "compositeOnly": false,
+            "passMs": 446.740732,
+            "tracedPixels": 14400,
+            "cachedPixels": 0,
+            "primaryAoGiRays": 28800
+          }
+        ]
+      }
+    ],
+    "scene": "sponza-dragon",
+    "dragonTriangles": 43440,
+    "startupRigidStats": {
+      "assetBuilds": 1,
+      "tlasBuilds": 1,
+      "tlasRefits": 0,
+      "geometryBytesUploaded": 6819040,
+      "poseBytesUploaded": 80,
+      "tlasBytesUploaded": 32
+    }
+  },
+  "clearance": {
+    "sampledPoses": 301,
+    "timeRangeSeconds": [
+      0.0,
+      10.0
+    ],
+    "stepSeconds": 0.03333333333333333,
+    "dragonTriangles": 43440,
+    "sponzaTriangles": 243645,
+    "trianglePairsAfterBroadPhase": 0,
+    "intersectingTrianglePairsAcrossPoses": 0,
+    "posesWithIntersections": 0,
+    "lowestVertexHeightRangeAboveFloorMeters": [
+      0.3600013554096222,
+      0.5999833345413208
+    ],
+    "nominalFloorZ": 0,
+    "nonFloorClearanceThresholdMeters": 0.1,
+    "posesWithTriangleAABBsWithinThresholdOfNonFloor": 0,
+    "planarFloorTriangleCount": 11248
+  },
+  "distanceField": {
+    "dims": [
+      304,
+      192,
+      136
+    ],
+    "min": [
+      -18.9375,
+      -11.8125,
+      -1.5625
+    ],
+    "span": [
+      38,
+      24,
+      17
+    ],
+    "voxel_pitch": [
+      0.125,
+      0.125,
+      0.125
+    ],
+    "triangle_count": 243645,
+    "compressed_bytes": 2221138,
+    "raw_bytes": 15876096,
+    "negative_voxels": 1645673,
+    "courtyard": {
+      "samples": 2405,
+      "domain": {
+        "x": [
+          -9,
+          9
+        ],
+        "y": [
+          -1.5,
+          1.5
+        ],
+        "z": [
+          0.15,
+          0.4,
+          0.85,
+          1.6,
+          2.5
+        ]
+      },
+      "negative_count": 0,
+      "min": 0.13605956733226776,
+      "max": 1.5,
+      "nonpositive_points": []
+    },
+    "sampled_magnitude": {
+      "samples": 33,
+      "mae": 0.005427120493784761,
+      "max_error": 0.027839023619889526
+    },
+    "surface_points": {
+      "samples": 20,
+      "max_abs": 0.027839023619890213
+    },
+    "landmarks": [
+      {
+        "xyz": [
+          -5.9,
+          -1.12,
+          1.65
+        ],
+        "field": 0.6225140690803528,
+        "clipped_reference_distance": 0.6204292049412109
+      },
+      {
+        "xyz": [
+          1.1,
+          0.12,
+          1.36
+        ],
+        "field": 1.3600000143051147,
+        "clipped_reference_distance": 1.36
+      },
+      {
+        "xyz": [
+          0.0,
+          0.0,
+          0.125
+        ],
+        "field": 0.125,
+        "clipped_reference_distance": 0.125
+      },
+      {
+        "xyz": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "field": 1.0,
+        "clipped_reference_distance": 1.0
+      },
+      {
+        "xyz": [
+          0.0,
+          0.0,
+          0.25
+        ],
+        "field": 0.25,
+        "clipped_reference_distance": 0.25
+      }
+    ],
+    "native_baker": {
+      "triangles": 243645,
+      "points": 0,
+      "points_hidden": 0,
+      "signed": true,
+      "res": [
+        304,
+        192,
+        136
+      ],
+      "f16": true,
+      "clip": 1.5,
+      "threads": 4,
+      "block": 8,
+      "search": "bvh-neighbour",
+      "grid_cell": 0.626,
+      "ms": {
+        "load": 282.753,
+        "grid": 0.099,
+        "bvh": 185.431,
+        "sign": 191.972,
+        "sign_wait": 0.075,
+        "distance": 3333.199,
+        "total": 3814.48
+      },
+      "limit": 1.5,
+      "blocks": 15504,
+      "blocks_culled": 16,
+      "voxels_culled": 351096,
+      "distance_queries": 7777600,
+      "triangle_tests": 39946183,
+      "validate": {
+        "voxels": 128,
+        "mismatches": 0,
+        "sign_errors": 0,
+        "ms": 244.901
+      }
+    },
+    "wall_seconds": 5.188,
+    "exterior_sign": {
+      "reachable_centers": 3549516,
+      "corrected_signs_including_negative_zero": 343799,
+      "sky_centers": 58368,
+      "negative_sky_before": 20528,
+      "negative_sky_after": 0
+    },
+    "compressed_sha256": "cecd0a6f5cca6cd18fabd2f9c4623a964f4785c6170f3349f36742987bf20298"
+  },
+  "assetSHA256": {
+    "sponza-mesh.bin.gz": "f8d3461f7baebf5744eccb9aa5fca9fb4110e6fca259cdd973e830d082e7f81d",
+    "red-dragon-mesh.bin.gz": "af590fc1e70917919e5d31c7c3b1f00a3d3e29816ae0e50cde311345c3a9039a",
+    "sponza.f16.gz": "cecd0a6f5cca6cd18fabd2f9c4623a964f4785c6170f3349f36742987bf20298",
+    "scene.js": "af8b21fc9bbcb3a8bf39d4be05263de2ca28cf777a630c7a8012d0b105fd913d"
+  }
+}
