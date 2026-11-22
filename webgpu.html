@@ -13,6 +13,7 @@ nav{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
 button,select{font:inherit;padding:7px 12px;color:inherit;background:#252f3d;border:1px solid #718095;border-radius:6px;cursor:pointer}
 button[aria-pressed=true]{background:#d4e9fb;color:#162433;font-weight:600}
 nav label{display:flex;align-items:center;gap:5px;padding:4px 6px}
+nav [hidden]{display:none}
 #view{position:relative;background:#17212e;border-radius:8px;overflow:hidden}
 #view.dragover{outline:3px dashed #38bdf8;outline-offset:-3px}
 #drop-hint{display:none;position:absolute;inset:0;background:rgba(15,23,42,.78);color:#e0f2fe;font-size:22px;font-weight:700;align-items:center;justify-content:center;pointer-events:none}
@@ -35,6 +36,9 @@ canvas{display:block;width:100%;height:auto}
     <button data-scene="gallery" aria-pressed="true">Gallery (Multi-Bounce GI)</button>
     <button data-scene="atrium" aria-pressed="false">Atrium (Curved)</button>
     <button data-scene="archive" aria-pressed="false">Archive (Boxes)</button>
+    <button data-scene="sponza-dragon" aria-pressed="false">Sponza &amp; Dragon</button>
+    <label id="dragon-toggle" hidden><input id="dragon-visible" type="checkbox" checked> Show dragon</label>
+    <button id="dragon-motion" hidden>Pause dragon</button>
     <select id="import-role" aria-label="Model import mode">
       <option value="static">Import as static scene</option>
       <option value="rigid">Import as moving mesh</option>
@@ -80,17 +84,24 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { buildContactBVH } from './contact-bvh.js';
 import { WebGPUFastSDFAO, WEBGPU_QUALITY_PRESETS } from './src/webgpu.js';
+import { createDragon, SPONZA_CAMERA } from './assets/sponza-dragon/scene.js';
 
 const statusEl = document.querySelector('#status');
 const errEl = document.querySelector('#err');
 const canvas = document.querySelector('#c');
 const fpsEl = document.querySelector('#fps');
 const gpuMsEl = document.querySelector('#gpu-ms');
+const preset = new URLSearchParams(location.search).get('scene');
+if (preset === 'sponza-dragon') statusEl.value = 'Opening Sponza & Dragon · Initializing WebGPU…';
 
 async function fetchGzipHalf(url) {
   const resp = await fetch(url);
   if (!resp.ok) throw Error(`Failed to fetch ${url} (${resp.status})`);
-  const stream = resp.body.pipeThrough(new DecompressionStream('gzip'));
+  // A host may serve .gz with Content-Encoding: gzip, which fetch already decodes.
+  const bytes = await resp.arrayBuffer();
+  const magic = new Uint8Array(bytes, 0, Math.min(bytes.byteLength, 2));
+  if (magic[0] !== 0x1f || magic[1] !== 0x8b) return new Uint16Array(bytes);
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
   const buf = await new Response(stream).arrayBuffer();
   return new Uint16Array(buf);
 }
@@ -161,9 +172,9 @@ try {
     gallery: [0, -1.55, 0.025],
     atrium: [0, -2.95, 0],
     archive: [12, 6.5, 0],
+    'sponza-dragon': [0, 0, 0],
     custom: [0, -2.65, 0],
   };
-  const preset = new URLSearchParams(location.search).get('scene');
   const boxTestScene = preset === 'moving-box';
   const rigidTestScene = preset === 'rigid-mesh';
   const rigidInput = document.querySelector('#rigid-mover');
@@ -172,8 +183,22 @@ try {
   const moversInput = document.querySelector('#movers');
   let activeScene = 'gallery';
   let selection = 0, customSdf = null;
+  let latestFile = 0, signalFirstEnvironment;
+  const firstEnvironment = new Promise(resolve => { signalFirstEnvironment = resolve; });
   let rigidData = null, rigidAsset = null, rigidInstance = null;
   let atriumWorkload = null;
+  let dragon = null;
+  const dragonVisible = document.querySelector('#dragon-visible');
+  const dragonMotion = document.querySelector('#dragon-motion');
+  function syncDragonControls() {
+    document.querySelector('#dragon-toggle').hidden = !dragon;
+    dragonMotion.hidden = !dragon;
+    dragonVisible.checked = dragon?.enabled ?? false;
+    dragonMotion.disabled = !dragon?.enabled;
+    dragonMotion.textContent = dragon?.playing ? 'Pause dragon' : 'Play dragon';
+  }
+  dragonVisible.onchange = () => dragon?.setEnabled(dragonVisible.checked);
+  dragonMotion.onclick = () => dragon?.setPlaying(!dragon.playing);
   const rigidMatrix = new T.Matrix4();
   let emissiveOn = false;
   let moversOn = false;
@@ -271,9 +296,14 @@ try {
   }
 
   function setStaticEnvironment(scene) {
+    dragon?.dispose();
+    dragon = null;
+    syncDragonControls();
     atriumWorkload?.dispose();
     atriumWorkload = null;
     gpu.loadScene(scene); // Releases all instance handles in the previous environment.
+    signalFirstEnvironment?.();
+    signalFirstEnvironment = null;
     customSdf?.destroy();
     customSdf = scene.sdfTex ?? null;
     rigidAsset = null;
@@ -283,7 +313,6 @@ try {
 
   async function loadSceneData(name) {
     if (sceneCache[name]) return sceneCache[name];
-    statusEl.value = `Loading ${name} mesh, FP16 SDF & SAH Contact BVH…`;
     if (name === 'gallery') {
       const [mod, sdfHalf] = await Promise.all([
         import('./assets/gallery-scene.js'),
@@ -330,6 +359,20 @@ try {
       const contactRange = Math.max(0.18, 0.12 + 0.5 * Math.hypot(mod.ATRIUM_SDF_SPAN[0] / mod.ATRIUM_SDF_DIMS[0], mod.ATRIUM_SDF_SPAN[1] / mod.ATRIUM_SDF_DIMS[1], mod.ATRIUM_SDF_SPAN[2] / mod.ATRIUM_SDF_DIMS[2]));
       const bvh = buildContactBVH([mesh], T, { gridSize: 'auto', range: contactRange + 0.0005 });
       sceneCache[name] = { ...data, sdfHalf, sdfDims: mod.ATRIUM_SDF_DIMS, sdfMin: mod.ATRIUM_SDF_MIN, sdfSpan: mod.ATRIUM_SDF_SPAN, bvh, contactRange, cam: mod.ATRIUM_CAMERA, useGI: true };
+    } else if (name === 'sponza-dragon') {
+      // Keep one in-flight load and contact hierarchy when users reselect the preset.
+      sceneCache[name] = Promise.all([
+        import('./assets/sponza-dragon/sponza-geometry.js').then(mod => mod.loadSponzaGeometry()),
+        import('./assets/sponza-dragon/dragon.js').then(mod => mod.loadDragonGeometry()),
+        import('./assets/sponza-dragon/sponza-sdf.js'),
+        fetchGzipHalf('./assets/sponza-dragon/sponza.f16.gz'),
+      ]).then(([data, dragonData, sdf, sdfHalf]) => {
+        const { SPONZA_SDF_DIMS: sdfDims, SPONZA_SDF_SPAN: sdfSpan, SPONZA_SDF_MIN: sdfMin } = sdf;
+        if (sdfHalf.length !== sdfDims[0] * sdfDims[1] * sdfDims[2]) throw Error('Unexpected Sponza SDF size');
+        const contactRange = Math.max(0.18, 0.12 + 0.5 * Math.hypot(...sdfSpan.map((span, i) => span / sdfDims[i])));
+        const bvh = buildContactBVH([makeThreeMesh(data)], T, { gridSize: 'auto', range: contactRange + 0.0005 });
+        return { ...data, sdfHalf, sdfDims, sdfMin, sdfSpan, bvh, contactRange, cam: SPONZA_CAMERA, dragonData, useGI: true };
+      }).catch(error => { delete sceneCache[name]; throw error; });
     } else {
       const [boxes, sdfHalf] = await Promise.all([
         fetch('./benchmark/archive.json').then(r => r.json()),
@@ -349,13 +392,33 @@ try {
 
   async function selectScene(name) {
     const request = ++selection;
-    const sc = await loadSceneData(name);
+    statusEl.value = name === 'sponza-dragon'
+      ? 'Loading Sponza architecture, dragon mesh and baked SDF · Preparing contact BVHs…'
+      : `Loading ${name} mesh, FP16 SDF & SAH Contact BVH…`;
+    let sc;
+    try { sc = await loadSceneData(name); }
+    catch (error) {
+      if (request !== selection) return;
+      statusEl.value = `Scene load failed: ${error.message}`;
+      throw error;
+    }
     if (request !== selection) return;
+    if (sc.dragonData) {
+      statusEl.value = 'Uploading Sponza and building the dragon BVH…';
+      await new Promise(resolve => setTimeout(resolve, 0));
+      if (request !== selection) return;
+      setRigidMover(false);
+      setMovers(false);
+    }
     activeScene = name;
     document.querySelectorAll('button[data-scene]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.scene === name)));
     gpu.sunDir = name === 'archive' ? [-0.33, -0.45, 0.83] : sunDirFromDeg(sunDeg);
     gpu.emissiveCol = (emissiveOn && name === 'gallery') ? [3.6, 2.0, 0.6] : [0, 0, 0];
     setStaticEnvironment(sc);
+    if (sc.dragonData) {
+      dragon = createDragon(gpu.rigidMeshes, sc.dragonData, syncDragonControls);
+      syncDragonControls();
+    }
     const cam = (boxTestScene || rigidTestScene) && name === 'gallery'
       ? { position: [2.4, -6.2, 2.35], target: [0, -0.6, 0.65] }
       : sc.cam;
@@ -365,9 +428,12 @@ try {
     const info = gpu.adapterInfo;
     const devLabel = info.description || info.architecture || info.vendor || 'WebGPU';
     statusEl.value = `${name.toUpperCase()} · ${devLabel} · ${(sc.indices.length / 3).toLocaleString()} tris · ${sc.bvh.nodes.toLocaleString()} BVH nodes · 262k SHaRC hash slots`;
+    if (dragon) statusEl.value += ` · ${(dragon.data.indices.length / 3).toLocaleString()} rigid dragon tris`;
   }
 
-  document.querySelectorAll('button[data-scene]').forEach(b => { b.onclick = () => selectScene(b.dataset.scene); });
+  document.querySelectorAll('button[data-scene]').forEach(b => {
+    b.onclick = () => selectScene(b.dataset.scene).catch(error => { statusEl.value = `Scene load failed: ${error.message}`; });
+  });
   document.querySelector('#quality').onchange = e => {
     gpu.setQuality(e.target.value);
     document.querySelector('#refl').checked = gpu.useReflections;
@@ -570,18 +636,22 @@ try {
   async function handleFiles(fileList) {
     const files = Array.from(fileList);
     const file = files.find(f => /\.(?:obj|glb|gltf)$/i.test(f.name));
-    const request = ++selection;
+    const fileRequest = ++latestFile;
+    if (!file) { statusEl.value = 'Choose a .glb, .gltf, or .obj model.'; return; }
     const rigid = importRole.value === 'rigid';
+    // Keep the initial scene available if parsing or baking a dropped file fails.
+    const waitForScene = Boolean(signalFirstEnvironment);
+    const request = waitForScene ? selection : ++selection;
     try {
-      if (!file) throw Error('Choose a .glb, .gltf, or .obj model.');
       const object = /\.obj$/i.test(file.name)
         ? new OBJLoader().parse(await file.text())
         : await parseGltf(file, files);
-      if (request !== selection) return;
+      if (waitForScene) await firstEnvironment;
+      if (request !== selection || fileRequest !== latestFile) return;
       if (rigid) loadRigidThreeObject(object, file.name);
       else await loadCustomThreeObject(object, file.name, request);
     } catch (e) {
-      if (request === selection) statusEl.value = `Load failed: ${e.message}`;
+      if (request === selection && fileRequest === latestFile) statusEl.value = `Load failed: ${e.message}`;
     }
   }
 
@@ -601,7 +671,8 @@ try {
 
   function loop(now) {
     if (!running) return;
-    if (lastNow) simTime += Math.min(now - lastNow, 100) / 1000;
+    const dtSeconds = lastNow ? Math.min(now - lastNow, 100) / 1000 : 0;
+    simTime += dtSeconds;
     lastNow = now;
     if (emissiveOn && activeScene === 'gallery') {
       const a = simTime * 0.9;
@@ -613,6 +684,7 @@ try {
     if (moversOn) updateMovers(simTime);
     if (rigidInstance !== null) gpu.rigidMeshes.setTransform(rigidInstance, rigidPose(simTime));
     atriumWorkload?.setTime(simTime);
+    if (dragon?.playing) dragon.setTime(dragon.time + dtSeconds);
     renderOnce();
     fCount++;
     const dt = now - fStart;
@@ -636,6 +708,7 @@ try {
     setRigidMover,
     get rigidMover() { return { asset: rigidAsset, instance: rigidInstance, data: rigidData, matrix: rigidMatrix.elements.slice() }; },
     setMovers,
+    get dragon() { return dragon; },
     stopLoop: () => { running = false; },
     setSun: (deg) => { sunDeg = deg; gpu.sunDir = sunDirFromDeg(deg); gpu.relight(true); },
     setEmissive: (on, t = 0.7) => {
@@ -653,6 +726,12 @@ try {
     const { createAtriumWorkload } = await import('./benchmark/rigid-atrium-scene.mjs');
     atriumWorkload = await createAtriumWorkload(demo, { count: 8 });
     statusEl.value += ' · 8 moving mesh instances';
+  } else if (preset === 'sponza-dragon') {
+    try { await selectScene(preset); }
+    catch (error) {
+      await selectScene('gallery');
+      statusEl.value = `Could not open Sponza & Dragon: ${error.message} · Select the scene to retry.`;
+    }
   } else {
     await selectScene('gallery');
     setMovers(boxTestScene, simTime);
