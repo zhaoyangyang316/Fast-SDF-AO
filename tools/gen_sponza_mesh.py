@@ -139,7 +139,8 @@ def convert(source, output):
             posall.append(v[:, :3].astype('<f4'))
             norall.append(np.round(n * 32767).astype('<i2'))
             colors.append(sample_diffuse(archive, materials[name], v[:, 6:8]))
-            rough = {'floor': .22, 'vase': .29, 'vase_hanging': .47, 'flagpole': .35}.get(name, .86 if name.startswith('fabric') else .69)
+            # Signed roughness selects the renderer's full-resolution mirror path on the courtyard floor.
+            rough = {'floor': -.04, 'vase': .29, 'vase_hanging': .47, 'flagpole': .35}.get(name, .86 if name.startswith('fabric') else .69)
             roughness.append(np.full(len(v), round(rough * 127), np.int8))
             indices.append((tri + base).astype('<u4'))
             base += len(v)

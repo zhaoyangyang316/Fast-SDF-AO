@@ -142,7 +142,7 @@ Use `--browser /path/to/chromium` for a system browser or add `--software` for a
 
 ### A moving dragon in Sponza
 
-Serve this checkout with `python3 -m http.server 8000` and open [Sponza & Dragon](http://localhost:8000/webgpu.html?scene=sponza-dragon) in a WebGPU browser. The preset is also available in the scene selector. Use **Pause dragon** to inspect a pose and **Show dragon** to compare the same view with the courtyard empty.
+Serve this checkout with `python3 -m http.server 8000` and open [Sponza & Dragon](http://localhost:8000/webgpu.html?scene=sponza-dragon) in a WebGPU browser. The preset opens with the gliding dragon and its reflection in the polished courtyard floor both in view. Use **Pause dragon** to inspect a pose or toggle **Reflections** to compare the floor from the same camera.
 
 The Sponza architecture has 243,645 static triangles. Its contact BVHs and baked FP16 distance field stay fixed throughout the flight. The dragon adds 43,440 triangles in one local-space BVH. Each animation step changes the dragon’s pose and refits its instance bounds. The wings keep their modeled shape during the glide.
 

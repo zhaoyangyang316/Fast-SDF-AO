@@ -1,7 +1,7 @@
 // Sponza is Z-up, in meters, with its central aisle along X.
 export const SPONZA_CAMERA = {
-  position: [-5.9, -1.12, 1.65],
-  target: [1.1, 0.12, 1.36],
+  position: [-8.5, -1.12, 1.5],
+  target: [-1.95, -0.275, 0],
 };
 
 export function dragonPose(seconds, out = new Float32Array(16)) {

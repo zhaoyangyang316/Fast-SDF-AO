@@ -4,6 +4,8 @@ This mesh depicts the Atrium of the Sponza Palace in Dubrovnik. Frank Meinl remo
 
 Fast-SDF-AO’s adaptation uses meters and a Z-up coordinate system. The ground-floor center is at the origin and the long nave runs along X. The conversion triangulates the OBJ, samples its diffuse textures into linear vertex colors, subdivides broad masonry and floor surfaces, and reduces tessellation on dense cloth and architectural details. The opaque renderer omits the opacity-masked foliage and chain cards. Surface roughness values are assigned for the renderer. The static mesh and its derived distance field carry the source attribution.
 
+The demo gives the OBJ’s `floor` material a polished metal finish to show the moving dragon in the courtyard. Its signed roughness is stored as −5/127, which enables the full-resolution mirror trace. The original floor colors tint the reflection.
+
 To regenerate the compact mesh, download the source ZIP above (SHA-256 `da005cbee0be2df2abc8513f3ceb61bcb6f69aac112babcd9c00169a27c2770c`) and run this from the repository root with Python, NumPy and Pillow installed.
 
 ```sh

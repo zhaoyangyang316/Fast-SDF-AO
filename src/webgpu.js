@@ -1430,7 +1430,7 @@ fn compSampleRad(p: vec3<f32>) -> vec3<f32> {
   return textureSampleLevel(radVol, linSamp, uv, 0.0).rgb * u.sdfMin.w;
 }
 
-// Full-resolution 1280x720 exact mirror chrome trace (runs ONLY on mirror pixels: <1.5% of screen!)
+// Trace mirror conductors at the output resolution. Cost scales with their visible area.
 // Zero half-res stair-stepping, zero temporal smear, pixel-sharp G-buffer + 360-deg radVol fallback.
 fn traceMirrorFullRes(p: vec3<f32>, n: vec3<f32>, V: vec3<f32>) -> vec3<f32> {
   let R = reflect(-V, n);
