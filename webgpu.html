@@ -173,6 +173,7 @@ try {
   let activeScene = 'gallery';
   let selection = 0, customSdf = null;
   let rigidData = null, rigidAsset = null, rigidInstance = null;
+  let atriumWorkload = null;
   const rigidMatrix = new T.Matrix4();
   let emissiveOn = false;
   let moversOn = false;
@@ -270,6 +271,8 @@ try {
   }
 
   function setStaticEnvironment(scene) {
+    atriumWorkload?.dispose();
+    atriumWorkload = null;
     gpu.loadScene(scene); // Releases all instance handles in the previous environment.
     customSdf?.destroy();
     customSdf = scene.sdfTex ?? null;
@@ -590,10 +593,6 @@ try {
   viewEl.addEventListener('dragleave', () => viewEl.classList.remove('dragover'));
   viewEl.addEventListener('drop', e => { e.preventDefault(); viewEl.classList.remove('dragover'); if (e.dataTransfer?.files.length) handleFiles(e.dataTransfer.files); });
 
-  await selectScene('gallery');
-  setMovers(boxTestScene, simTime);
-  setRigidMover(rigidTestScene, simTime);
-
   let running = true, fCount = 0, fStart = performance.now();
   function renderOnce() {
     controls.update();
@@ -613,6 +612,7 @@ try {
     }
     if (moversOn) updateMovers(simTime);
     if (rigidInstance !== null) gpu.rigidMeshes.setTransform(rigidInstance, rigidPose(simTime));
+    atriumWorkload?.setTime(simTime);
     renderOnce();
     fCount++;
     const dt = now - fStart;
@@ -624,9 +624,7 @@ try {
     }
     requestAnimationFrame(loop);
   }
-  requestAnimationFrame(loop);
-
-  window.wgpuDemo = {
+  const demo = {
     gpu, camera, controls, selectScene, renderOnce, WEBGPU_QUALITY_PRESETS,
     loadCustomOBJ: async (objText, name = 'custom.obj') => {
       const obj = new OBJLoader().parse(objText);
@@ -651,6 +649,17 @@ try {
       gpu.relight(true);
     },
   };
+  if (preset === 'rigid-atrium') {
+    const { createAtriumWorkload } = await import('./benchmark/rigid-atrium-scene.mjs');
+    atriumWorkload = await createAtriumWorkload(demo, { count: 8 });
+    statusEl.value += ' · 8 moving mesh instances';
+  } else {
+    await selectScene('gallery');
+    setMovers(boxTestScene, simTime);
+    setRigidMover(rigidTestScene, simTime);
+  }
+  window.wgpuDemo = demo;
+  requestAnimationFrame(loop);
 } catch (e) {
   errEl.style.display = 'block';
   errEl.innerHTML = `<strong>WebGPU unavailable:</strong> ${e.message} — <a href="./index.html" style="color:#7dd3fc">open the WebGL2 viewer instead</a>.`;

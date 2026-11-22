@@ -24,6 +24,7 @@ def main():
     parser.add_argument("--browser", help="Path to Chromium (defaults to Playwright Chromium)")
     parser.add_argument("--software", action="store_true", help="Use the SwiftShader adapter")
     parser.add_argument("--scene", default="rigid-mesh")
+    parser.add_argument("--probe-args", type=json.loads, default={}, help="JSON options passed to run(demo, options)")
     parser.add_argument("--width", type=int, default=256)
     parser.add_argument("--height", type=int, default=144)
     args = parser.parse_args()
@@ -68,14 +69,14 @@ def main():
                 page.route("https://cdn.jsdelivr.net/npm/three@0.170.0/**", three_module)
                 page.goto(f"http://127.0.0.1:{server.server_port}/webgpu.html?scene={quote(args.scene)}")
                 page.wait_for_function("window.wgpuDemo || document.querySelector('#err')?.textContent", timeout=60000)
-                result = page.evaluate("""async path => {
+                result = page.evaluate("""async ([path, options]) => {
                   const demo = window.wgpuDemo;
                   if (!demo) throw Error(document.querySelector('#err')?.textContent || 'Demo startup failed');
                   demo.stopLoop();
                   await demo.gpu.device.queue.onSubmittedWorkDone();
                   const {run} = await import(path);
                   let result;
-                  try { result = await run(demo); }
+                  try { result = await run(demo, options); }
                   catch (error) {
                     if (window.deviceErrors.length) throw Error(error.message + "; " + window.deviceErrors[0]);
                     throw error;
@@ -83,7 +84,7 @@ def main():
                   await demo.gpu.device.queue.onSubmittedWorkDone();
                   if (window.deviceErrors.length) throw Error(window.deviceErrors.slice(0, 3).join("; "));
                   return result;
-                }""", "/" + module)
+                }""", ["/" + module, args.probe_args])
                 if errors:
                     raise RuntimeError("\n".join(errors))
                 print(json.dumps(result, indent=2))

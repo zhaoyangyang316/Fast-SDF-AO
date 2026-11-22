@@ -32,7 +32,7 @@ function meshData(geometry) {
   return { positions: position.array, normals: normal.array, colors, roughness, indices: geometry.index.array };
 }
 
-function reference(meshes, ray) {
+export function referenceRigidHit(meshes, ray) {
   const origin = new THREE.Vector3(...ray.slice(0, 3));
   const dir = new THREE.Vector3(...ray.slice(4, 7));
   const caster = new THREE.Raycaster(origin, dir, ray[3], ray[7]);
@@ -52,20 +52,13 @@ function reference(meshes, ray) {
       ...interpolate(color).toArray(), r] };
 }
 
-export async function testRigidQueries(device) {
-  const scene = new RigidMeshScene(device);
+export async function rigidQueryPipeline(device) {
   const module = device.createShaderModule({code: RIGID_MESH_WGSL + QUERY});
-  const pipeline = await device.createComputePipelineAsync({layout: 'auto', compute: {module, entryPoint: 'main'}});
-  const rays = [];
-  for (let j = -4; j <= 4; j++) for (let i = -6; i <= 6; i++) {
-    const ray = [i * 0.29 + 0.041, j * 0.28 + 0.019, 3, 0.001, 0, 0, -1, 7];
-    rays.push(ray, [...ray.slice(0, 7), 2.91]);
-  }
-  rays.push([0.01, 0.03, 0.08, 0.001, 1, 0, 0, 7],  // ray starts inside the torus bounds
-            [0.11, 0.05, 0.04, 0.001, 1, 1e-10, 0, 7],
-            [0.1, -0.1, 3, 3, 0, 0, -1, 3]);         // empty ray interval
-  const input = Float32Array.from(rays.flat());
-  const bytes = rays.length * 64;
+  return device.createComputePipelineAsync({layout: 'auto', compute: {module, entryPoint: 'main'}});
+}
+
+export async function queryRigidBatch(device, scene, pipeline, input) {
+  const bytes = input.length / 8 * 64;
   function buffer(size, usage) { return device.createBuffer({size, usage}); }
   const src = buffer(input.byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
   const dst = buffer(bytes, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC);
@@ -76,24 +69,43 @@ export async function testRigidQueries(device) {
       entries: buffers.map((b, binding) => ({binding, resource: {buffer: b}}))});
   }
   const io = group(0, [src, dst]);
-  let queries = 0, hits = 0;
-  async function check(label, meshes) {
+  try {
     scene.prepare();
     const enc = device.createCommandEncoder();
     const pass = enc.beginComputePass();
     pass.setPipeline(pipeline);
     pass.setBindGroup(0, io);
     pass.setBindGroup(1, group(1, [scene.instanceBuffer, scene.tlasBuffer, scene.geometryBuffer]));
-    pass.dispatchWorkgroups(Math.ceil(rays.length / 32));
+    pass.dispatchWorkgroups(Math.ceil(input.length / 8 / 32));
     pass.end();
     enc.copyBufferToBuffer(dst, 0, read, 0, bytes);
     device.queue.submit([enc.finish()]);
     await read.mapAsync(GPUMapMode.READ);
     const copy = read.getMappedRange().slice(0);
     read.unmap();
-    const ids = new Uint32Array(copy), floats = new Float32Array(copy);
+    return { ids: new Uint32Array(copy), floats: new Float32Array(copy) };
+  } finally {
+    src.destroy(); dst.destroy(); read.destroy();
+  }
+}
+
+export async function testRigidQueries(device) {
+  const scene = new RigidMeshScene(device);
+  const pipeline = await rigidQueryPipeline(device);
+  const rays = [];
+  for (let j = -4; j <= 4; j++) for (let i = -6; i <= 6; i++) {
+    const ray = [i * 0.29 + 0.041, j * 0.28 + 0.019, 3, 0.001, 0, 0, -1, 7];
+    rays.push(ray, [...ray.slice(0, 7), 2.91]);
+  }
+  rays.push([0.01, 0.03, 0.08, 0.001, 1, 0, 0, 7],  // ray starts inside the torus bounds
+            [0.11, 0.05, 0.04, 0.001, 1, 1e-10, 0, 7],
+            [0.1, -0.1, 3, 3, 0, 0, -1, 3]);         // empty ray interval
+  const input = Float32Array.from(rays.flat());
+  let queries = 0, hits = 0;
+  async function check(label, meshes) {
+    const { ids, floats } = await queryRigidBatch(device, scene, pipeline, input);
     for (let i = 0; i < rays.length; i++) {
-      const ref = reference(meshes, input.subarray(i*8, i*8+8));
+      const ref = referenceRigidHit(meshes, input.subarray(i*8, i*8+8));
       const k = i*16;
       if (ids[k] !== Number(!!ref) || ids[k+3] !== Number(!!ref)
           || (ref && (ids[k+1] !== ref.id || ids[k+2] !== ref.primitive))) {
@@ -141,7 +153,7 @@ export async function testRigidQueries(device) {
     if (!hits) throw Error('No triangle hits exercised');
     return {queries, hits};
   } finally {
-    src.destroy(); dst.destroy(); read.destroy(); scene.destroy();
+    scene.destroy();
     torus.dispose(); triangle.dispose(); material.dispose();
   }
 }

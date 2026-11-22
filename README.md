@@ -140,6 +140,19 @@ python3 test/webgpu-browser.py benchmark/rigid-mesh-bench.mjs --scene gallery --
 
 Use `--browser /path/to/chromium` for a system browser or add `--software` for a SwiftShader functional run.
 
+### Eight moving meshes in the Atrium
+
+Open `webgpu.html?scene=rigid-atrium` in the served checkout to animate four teapots and four torus knots. The static Atrium contains 13,704 triangles. The eight props add 41,728 instanced triangles from four shared material and geometry combinations.
+
+The following probes use the same camera, geometry and motion. The performance probe compares zero, one and eight instances, parked and moving, and records median and p95 completed-frame times with one frame in flight. Run it on an idle adapter at your target resolution. The quality probe measures temporal variation and compares moving frames to independently accumulated frames at the same pose. The CPU contact check requires Node.js, NumPy and a C++ compiler.
+
+```sh
+python3 test/webgpu-browser.py benchmark/rigid-atrium-perf.mjs --width 1280 --height 720 > atrium-timing.json
+python3 test/webgpu-browser.py benchmark/rigid-atrium-queries.mjs > atrium-rays.json
+python3 test/webgpu-browser.py benchmark/rigid-atrium-quality.mjs --width 320 --height 180 > atrium-quality.json
+python3 benchmark/rigid-atrium-ao.py atrium-quality.json atrium-contact
+```
+
 ## Traced SDF (temporal)
 
 The **Traced SDF (temporal)** mode estimates the unblocked share of cosine-weighted directions out to 1.12 m. [contact-bvh.js](contact-bvh.js) supplies a generic triangle-mesh contact accelerator, including indexed and instanced meshes with world transforms. The farther estimator samples the baked isotropic FP16 distance field (`256 × 176 × 80`, ~10.1 cm voxels).
